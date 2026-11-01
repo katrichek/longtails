@@ -19,3 +19,23 @@ lemma execute_lineSearch {Ω : Type} [MeasurableSpace Ω]
   simpa only [lineSearch] using h
 
 end OracleTemplate.LineSearch
+
+namespace OracleTemplate.LineSearch
+
+open MeasureTheory
+
+lemma decode_queries {Ω : Type} (R x0 : ℝ) {m : ℕ}
+    (s : (inner R x0).State) (g : ℝ → Ω → ℝ) (ξ : ℕ → Ω) (call : ℕ) :
+    decode R x0 s (fun i => g (queries R x0 m s i) (ξ (call * (2 * m) + i.val))) =
+      ((∑ j : Fin m, g (leftPoint s) (ξ (call * (2 * m) + j.val))) / (m : ℝ),
+        (∑ j : Fin m, g (rightPoint s) (ξ (call * (2 * m) + m + j.val))) / (m : ℝ)) := by
+  simp only [decode, queries]
+  congr 2
+  · refine Finset.sum_congr rfl fun j _ => ?_
+    simp only [Fin.val_mk, if_pos j.isLt]
+  · refine Finset.sum_congr rfl fun j _ => ?_
+    simp only [Fin.val_mk, if_neg (by omega : ¬ (m + j.val < m))]
+    congr 1
+    ring
+
+end OracleTemplate.LineSearch
