@@ -1,4 +1,5 @@
 import LongTails.Algorithms.LineSearch
+import LongTails.Proofs.LineSearchLevels
 
 namespace OracleTemplate.LineSearch
 
@@ -37,5 +38,22 @@ lemma pairRun_state_succ (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → (Fin m
     (pairRun R x0 m g β (j + 1)).1
       = step (pairRun R x0 m g β j).1 (pairRun R x0 m g β (j + 1)).2 :=
   congrArg Prod.fst (pairRun_succ R x0 m g β j)
+
+end OracleTemplate.LineSearch
+
+namespace OracleTemplate.LineSearch
+
+variable (R x0 : ℝ) {Ω : Type}
+
+lemma pairRun_state_eq_runState (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → (Fin m → Ω)) (j : ℕ) :
+    (pairRun R x0 m g β j).1
+      = runState R x0 (fun i => (pairRun R x0 m g β (i + 1)).2) j := by
+  induction j with
+  | zero => rfl
+  | succ j ih =>
+      rw [pairRun_state_succ R x0 m g β j,
+        runState_succ R x0 (fun i => (pairRun R x0 m g β (i + 1)).2) j]
+      refine Eq.trans (congrArg (fun s => step s (pairRun R x0 m g β (j + 1)).2) ih) ?_
+      rfl
 
 end OracleTemplate.LineSearch
