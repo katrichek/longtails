@@ -39,3 +39,44 @@ lemma decode_queries {Ω : Type} (R x0 : ℝ) {m : ℕ}
     ring
 
 end OracleTemplate.LineSearch
+
+namespace OracleTemplate.LineSearch
+
+variable (R x0 : ℝ) {Ω : Type}
+
+noncomputable def blockRun (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → (Fin (2 * m) → Ω)) :
+    ℕ → State × (ℝ × ℝ) :=
+  fun j => Nat.rec (motive := fun _ => State × (ℝ × ℝ))
+    ({ level := 0, lo := x0 - R, hi := x0 + R, champ := x0, champVal := 0 }, (0, 0))
+    (fun i p =>
+      let v := decode R x0 p.1 (fun k => g (leftPoint p.1) (β i k))
+      (step p.1 v, v)) j
+
+lemma blockRun_zero (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → (Fin (2 * m) → Ω)) :
+    blockRun R x0 m g β 0
+      = ({ level := 0, lo := x0 - R, hi := x0 + R, champ := x0, champVal := 0 }, (0, 0)) := rfl
+
+lemma blockRun_succ (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → (Fin (2 * m) → Ω)) (j : ℕ) :
+    blockRun R x0 m g β (j + 1)
+      = (step (blockRun R x0 m g β j).1
+          (decode R x0 (blockRun R x0 m g β j).1
+            (fun k => g (leftPoint (blockRun R x0 m g β j).1) (β j k))),
+        decode R x0 (blockRun R x0 m g β j).1
+          (fun k => g (leftPoint (blockRun R x0 m g β j).1) (β j k))) := rfl
+
+lemma blockRun_pair_succ (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → (Fin (2 * m) → Ω)) (j : ℕ) :
+    (blockRun R x0 m g β (j + 1)).2
+      = decode R x0 (blockRun R x0 m g β j).1
+          (fun k => g (leftPoint (blockRun R x0 m g β j).1) (β j k)) := by
+  have h := congrArg Prod.snd (blockRun_succ R x0 m g β j)
+  simpa using h
+
+lemma blockRun_state_succ (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → (Fin (2 * m) → Ω)) (j : ℕ) :
+    (blockRun R x0 m g β (j + 1)).1
+      = step (blockRun R x0 m g β j).1
+          (decode R x0 (blockRun R x0 m g β j).1
+            (fun k => g (leftPoint (blockRun R x0 m g β j).1) (β j k))) := by
+  have h := congrArg Prod.fst (blockRun_succ R x0 m g β j)
+  simpa using h
+
+end OracleTemplate.LineSearch
