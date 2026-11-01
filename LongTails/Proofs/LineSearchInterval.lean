@@ -46,6 +46,17 @@ lemma stepInterval_len {l h : ℝ} (v : ℝ × ℝ) :
   · rw [if_pos hv]; unfold ptLeft; ring
   · rw [if_neg hv]; unfold ptRight; ring
 
+lemma stepInterval_nonempty {l h : ℝ} (hlh : l ≤ h) (v : ℝ × ℝ) :
+    (stepInterval l h v).1 ≤ (stepInterval l h v).2 := by
+  unfold stepInterval
+  by_cases hv : v.1 > v.2
+  · rw [if_pos hv]
+    unfold ptLeft
+    nlinarith
+  · rw [if_neg hv]
+    unfold ptRight
+    nlinarith
+
 lemma stepInterval_contains {l h : ℝ} {x : ℝ} (hx : x ∈ Icc l h)
     (hmid : x ∈ Icc (ptLeft l h) (ptRight l h)) (v : ℝ × ℝ) :
     x ∈ Icc (stepInterval l h v).1 (stepInterval l h v).2 := by
