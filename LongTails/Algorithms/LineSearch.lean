@@ -4,33 +4,44 @@ namespace OracleTemplate.LineSearch
 
 open scoped BigOperators
 
-abbrev State : Type := ℕ × ℝ × ℝ × ℝ × ℝ
+structure State where
+  level : ℕ
+  lo : ℝ
+  hi : ℝ
+  champ : ℝ
+  champVal : ℝ
 
-def lo (s : State) : ℝ := s.2.1
-def hi (s : State) : ℝ := s.2.2.1
-def champ (s : State) : ℝ := s.2.2.2.1
-def champVal (s : State) : ℝ := s.2.2.2.2
-noncomputable def leftPoint (s : State) : ℝ := s.2.1 + (s.2.2.1 - s.2.1) / 3
-noncomputable def rightPoint (s : State) : ℝ := s.2.1 + 2 * (s.2.2.1 - s.2.1) / 3
+noncomputable def leftPoint (s : State) : ℝ := s.lo + (s.hi - s.lo) / 3
+
+noncomputable def rightPoint (s : State) : ℝ := s.lo + 2 * (s.hi - s.lo) / 3
 
 noncomputable def inner (R x0 : ℝ) : Algorithm ℝ (ℝ × ℝ) ℝ where
   State := State
-  initial _ := (0, x0 - R, x0 + R, x0, 0)
+  initial _ := { level := 0, lo := x0 - R, hi := x0 + R, champ := x0, champVal := 0 }
   query s := (0, leftPoint s)
   update s v :=
-    if s.1 = 0 then
-      (1, (if v.1 > v.2 then leftPoint s else lo s), (if v.1 > v.2 then hi s else rightPoint s),
-        (if v.1 > v.2 then rightPoint s else leftPoint s), min v.1 v.2)
+    if s.level = 0 then
+      { level := 1,
+        lo := (if v.1 > v.2 then leftPoint s else s.lo),
+        hi := (if v.1 > v.2 then s.hi else rightPoint s),
+        champ := (if v.1 > v.2 then rightPoint s else leftPoint s),
+        champVal := min v.1 v.2 }
     else
-      let s' := (s.1 + 1, (if v.1 > v.2 then leftPoint s else lo s),
-        (if v.1 > v.2 then hi s else rightPoint s), champ s, champVal s)
-      if min v.1 v.2 < champVal s then
-        (s'.1, s'.2.1, s'.2.2.1, (if v.1 > v.2 then rightPoint s else leftPoint s), min v.1 v.2)
-      else s'
-  output s := champ s
+      if min v.1 v.2 < s.champVal then
+        { level := s.level + 1,
+          lo := (if v.1 > v.2 then leftPoint s else s.lo),
+          hi := (if v.1 > v.2 then s.hi else rightPoint s),
+          champ := (if v.1 > v.2 then rightPoint s else leftPoint s),
+          champVal := min v.1 v.2 }
+      else
+        { level := s.level + 1,
+          lo := (if v.1 > v.2 then leftPoint s else s.lo),
+          hi := (if v.1 > v.2 then s.hi else rightPoint s),
+          champ := s.champ,
+          champVal := s.champVal }
+  output s := s.champ
 
-noncomputable def queries (R x0 : ℝ) (m : ℕ) :
-    (inner R x0).State → Fin (2 * m) → ℝ :=
+noncomputable def queries (R x0 : ℝ) (m : ℕ) : (inner R x0).State → Fin (2 * m) → ℝ :=
   fun s i => if (i : ℕ) < m then leftPoint s else rightPoint s
 
 noncomputable def decode (R x0 : ℝ) {m : ℕ} :
