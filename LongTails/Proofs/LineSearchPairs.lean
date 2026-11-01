@@ -56,4 +56,19 @@ lemma pairRun_state_eq_runState (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ →
       refine Eq.trans (congrArg (fun s => step s (pairRun R x0 m g β (j + 1)).2) ih) ?_
       rfl
 
+lemma pairRun_congr (m : ℕ) (g : ℝ → Ω → ℝ) {β β' : ℕ → (Fin m → Ω)} {j : ℕ}
+    (h : ∀ i < 2 * j, β i = β' i) :
+    pairRun R x0 m g β j = pairRun R x0 m g β' j := by
+  induction j with
+  | zero => rfl
+  | succ j ih =>
+      have ih' := ih (fun i hi => h i (by omega))
+      rw [pairRun_succ R x0 m g β j, pairRun_succ R x0 m g β' j, ih',
+        h (2 * j) (by omega), h (2 * j + 1) (by omega)]
+
+lemma pairRun_state_congr (m : ℕ) (g : ℝ → Ω → ℝ) {β β' : ℕ → (Fin m → Ω)} {j : ℕ}
+    (h : ∀ i < 2 * j, β i = β' i) :
+    (pairRun R x0 m g β j).1 = (pairRun R x0 m g β' j).1 :=
+  congrArg Prod.fst (pairRun_congr R x0 m g h)
+
 end OracleTemplate.LineSearch
