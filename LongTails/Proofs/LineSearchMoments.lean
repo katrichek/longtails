@@ -154,3 +154,111 @@ lemma block_mean_sq_le {Ω : Type} [MeasurableSpace Ω] {p : Measure Ω} [IsProb
   linarith
 
 end OracleTemplate.LineSearch
+
+namespace OracleTemplate.LineSearch
+
+open MeasureTheory ProbabilityTheory
+
+variable {Ω : Type} [MeasurableSpace Ω]
+
+lemma abs_le_sq_div_add {z t : ℝ} (ht : 0 < t) : |z| ≤ z ^ 2 / (2 * t) + t / 2 := by
+  have h2 : |z| ^ 2 = z ^ 2 := sq_abs z
+  have h1 : 0 ≤ (|z| - t) ^ 2 := sq_nonneg _
+  have key : 2 * |z| * t ≤ z ^ 2 + t ^ 2 := by nlinarith [h1, h2]
+  have hsum : z ^ 2 / (2 * t) + t / 2 = (z ^ 2 + t ^ 2) / (2 * t) := by
+    field_simp
+  rw [hsum]
+  rw [le_div_iff₀ (by positivity : (0 : ℝ) < 2 * t)]
+  nlinarith [key]
+
+lemma eval_sub_const_memLp {p : Measure Ω} [IsProbabilityMeasure p] {m : ℕ}
+    (φ : Ω → ℝ) (c : ℝ) (hφ : MemLp (fun z : Ω => φ z - c) 2 p) (i : Fin m) :
+    MemLp (fun β : Fin m → Ω => φ (β i) - c) 2 (Measure.pi fun _ : Fin m => p) := by
+  haveI : ∀ i : Fin m, IsProbabilityMeasure p := fun _ => ‹IsProbabilityMeasure p›
+  exact MemLp.comp_measurePreserving hφ (measurePreserving_eval (μ := fun _ : Fin m => p) i)
+
+lemma block_mean_abs_le {p : Measure Ω} [IsProbabilityMeasure p]
+    {m : ℕ} (hm : 0 < m) (φ : Ω → ℝ) (c σ : ℝ) (hσ : 0 ≤ σ) (hφm : Measurable φ)
+    (hint : Integrable φ p) (hl2 : Integrable (fun z => (φ z - c) ^ 2) p)
+    (hmean : ∫ z, φ z ∂p = c) (hvar : ∫ z, (φ z - c) ^ 2 ∂p ≤ σ ^ 2) :
+    ∫ β : Fin m → Ω, |(∑ k : Fin m, φ (β k)) / (m : ℝ) - c|
+        ∂(Measure.pi fun _ : Fin m => p) ≤ σ / Real.sqrt m := by
+  have hmp : (0 : ℝ) < (m : ℝ) := by exact_mod_cast hm
+  have hmemφ : MemLp (fun z : Ω => φ z - c) 2 p :=
+    (memLp_two_iff_integrable_sq_norm ((hφm.sub_const c).aestronglyMeasurable)).mpr
+      (by simpa only [Real.norm_eq_abs, sq_abs] using hl2)
+  have hmemSum : MemLp (fun β : Fin m → Ω => ∑ k : Fin m, (φ (β k) - c)) 2
+      (Measure.pi fun _ : Fin m => p) :=
+    memLp_finset_sum Finset.univ (fun k _ => eval_sub_const_memLp φ c hmemφ k)
+  have hZeq : (fun β : Fin m → Ω => (∑ k : Fin m, φ (β k)) / (m : ℝ) - c)
+      = fun β => (1 / (m : ℝ)) * (∑ k : Fin m, (φ (β k) - c)) := by
+    funext β
+    simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
+    field_simp
+  have hmemZ : MemLp (fun β : Fin m → Ω => (∑ k : Fin m, φ (β k)) / (m : ℝ) - c) 2
+      (Measure.pi fun _ : Fin m => p) := by
+    rw [hZeq]
+    exact hmemSum.const_mul _
+  have hIntZ2 : Integrable (fun β : Fin m → Ω => ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2)
+      (Measure.pi fun _ : Fin m => p) := by
+    have h := (memLp_two_iff_integrable_sq_norm hmemZ.aestronglyMeasurable).mp hmemZ
+    simpa only [Real.norm_eq_abs, sq_abs] using h
+  have hIntZ : Integrable (fun β : Fin m → Ω => (∑ k : Fin m, φ (β k)) / (m : ℝ) - c)
+      (Measure.pi fun _ : Fin m => p) := hmemZ.integrable (by norm_num)
+  have hZ2 : ∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
+      ∂(Measure.pi fun _ : Fin m => p) ≤ σ ^ 2 / m :=
+    block_mean_sq_le hm φ c σ hφm hint hl2 hmean hvar
+  by_cases hσ0 : σ = 0
+  · have hzero : ∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
+        ∂(Measure.pi fun _ : Fin m => p) = 0 := by
+      have h2 : ∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
+          ∂(Measure.pi fun _ : Fin m => p) ≤ 0 := by
+        rw [hσ0] at hZ2
+        simpa using hZ2
+      have h3 : 0 ≤ ∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
+          ∂(Measure.pi fun _ : Fin m => p) :=
+        integral_nonneg (fun β => sq_nonneg ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c))
+      linarith
+    have hae := (integral_eq_zero_iff_of_nonneg_ae (μ := Measure.pi fun _ : Fin m => p)
+      (Filter.Eventually.of_forall fun β => sq_nonneg ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c))
+      hIntZ2).mp hzero
+    have habs : (fun β : Fin m → Ω => |(∑ k : Fin m, φ (β k)) / (m : ℝ) - c|)
+        =ᵐ[Measure.pi fun _ : Fin m => p] 0 := by
+      filter_upwards [hae] with β hβ
+      have h0 : (∑ k : Fin m, φ (β k)) / (m : ℝ) - c = 0 := sq_eq_zero_iff.mp hβ
+      simp only [h0, abs_zero, Pi.zero_apply]
+    rw [integral_congr_ae habs]
+    simp [hσ0]
+  · have hσpos : 0 < σ := lt_of_le_of_ne hσ (Ne.symm hσ0)
+    have hsqrt : 0 < Real.sqrt (m : ℝ) := Real.sqrt_pos.mpr hmp
+    have ht : 0 < σ / Real.sqrt m := div_pos hσpos hsqrt
+    have hsq : (σ / Real.sqrt m) ^ 2 = σ ^ 2 / m := by
+      rw [div_pow, Real.sq_sqrt hmp.le]
+    have hkey : (σ ^ 2 / m) / (2 * (σ / Real.sqrt m)) + (σ / Real.sqrt m) / 2
+        = σ / Real.sqrt m := by
+      rw [show σ ^ 2 / m = (σ / Real.sqrt m) ^ 2 from hsq.symm]
+      field_simp
+      ring
+    have hpoint : ∀ β : Fin m → Ω,
+        |(∑ k : Fin m, φ (β k)) / (m : ℝ) - c|
+          ≤ ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2 / (2 * (σ / Real.sqrt m))
+            + (σ / Real.sqrt m) / 2 :=
+      fun β => abs_le_sq_div_add ht
+    have hmono := integral_mono hIntZ.abs (hIntZ2.div_const _ |>.add (integrable_const _)) hpoint
+    have heq : ∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
+            / (2 * (σ / Real.sqrt m)) + (σ / Real.sqrt m) / 2 ∂(Measure.pi fun _ : Fin m => p)
+        = (∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
+              ∂(Measure.pi fun _ : Fin m => p)) / (2 * (σ / Real.sqrt m))
+          + (σ / Real.sqrt m) / 2 := by
+      rw [integral_add (hIntZ2.div_const _) (integrable_const _), integral_div, integral_const]
+      simp
+    have hle : (∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
+              ∂(Measure.pi fun _ : Fin m => p)) / (2 * (σ / Real.sqrt m))
+          + (σ / Real.sqrt m) / 2 ≤ σ / Real.sqrt m := by
+      have h2t : (0 : ℝ) < 2 * (σ / Real.sqrt m) := by positivity
+      have h := div_le_div_of_nonneg_right hZ2 h2t.le
+      linarith [hkey]
+    exact hmono.trans (heq.le.trans hle)
+
+end OracleTemplate.LineSearch
