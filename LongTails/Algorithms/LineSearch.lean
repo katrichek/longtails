@@ -36,10 +36,10 @@ noncomputable def queries (R x0 : ℝ) (m : ℕ) :
 noncomputable def decode (R x0 : ℝ) {m : ℕ} :
     (inner R x0).State → (Fin (2 * m) → ℝ) → (ℝ × ℝ) :=
   fun _ r =>
-    ((∑ i : Fin (2 * m), if (i : ℕ) < m then r i else 0) / (m : ℝ),
-      (∑ i : Fin (2 * m), if m ≤ (i : ℕ) then r i else 0) / (m : ℝ))
+    ((∑ j : Fin m, r ⟨j.val, by omega⟩) / (m : ℝ),
+      (∑ j : Fin m, r ⟨m + j.val, by omega⟩) / (m : ℝ))
 
-noncomputable def lineSearch (R x0 : ℝ) (m : ℕ) (hm : 0 < m) : Algorithm ℝ ℝ ℝ :=
-  batched (by omega : 0 < 2 * m) (inner R x0) (queries R x0 m) (decode R x0) 0
+noncomputable def lineSearch (R x0 : ℝ) {m : ℕ} (hn : 0 < 2 * m) : Algorithm ℝ ℝ ℝ :=
+  batched hn (inner R x0) (queries R x0 m) (decode R x0) 0
 
 end OracleTemplate.LineSearch
