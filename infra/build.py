@@ -1,7 +1,37 @@
-import fcntl
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
+
+
+def acquire(handle):
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+
+        while True:
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                return
+            except OSError:
+                time.sleep(1)
+    else:
+        import fcntl
+
+        fcntl.flock(handle, fcntl.LOCK_EX)
+
+
+def release(handle):
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 def main():
@@ -14,18 +44,21 @@ def main():
     ).strip()
     with (root / lock_path).open("a") as lock:
         print(f"Waiting for build lock in {root}...", flush=True)
-        fcntl.flock(lock, fcntl.LOCK_EX)
-        print(f"Building {root}", flush=True)
+        acquire(lock)
+        try:
+            print(f"Building {root}", flush=True)
 
-        def run(command, check=True):
-            return subprocess.run(
-                command, cwd=root, check=check, pass_fds=(lock.fileno(),)
-            )
+            def run(command, check=True):
+                return subprocess.run(command, cwd=root, check=check)
 
-        run(["lake", "exe", "cache", "get"])
-        if run(["lake", "exe", "mk_all", "--lib", "LongTails"], check=False).returncode:
-            run(["lake", "exe", "mk_all", "--lib", "LongTails", "--check"])
-        run(["lake", "build", *args])
+            run(["lake", "exe", "cache", "get"])
+            if run(
+                ["lake", "exe", "mk_all", "--lib", "LongTails"], check=False
+            ).returncode:
+                run(["lake", "exe", "mk_all", "--lib", "LongTails", "--check"])
+            run(["lake", "build", *args])
+        finally:
+            release(lock)
 
 
 if __name__ == "__main__":
