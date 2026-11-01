@@ -51,12 +51,12 @@ def main():
             def run(command, check=True):
                 return subprocess.run(command, cwd=root, check=check)
 
-            run(["lake", "exe", "cache", "get"])
+            # Never fetch build caches from the network: build everything locally.
             if run(
                 ["lake", "exe", "mk_all", "--lib", "LongTails"], check=False
             ).returncode:
                 run(["lake", "exe", "mk_all", "--lib", "LongTails", "--check"])
-            run(["lake", "build", *args])
+            run(["lake", "build", "--no-cache", *args])
         finally:
             release(lock)
 
