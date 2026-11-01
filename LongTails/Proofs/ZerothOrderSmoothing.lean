@@ -2258,7 +2258,7 @@ lemma twoPoint_sphere_relative_moment {d : ℕ} [NeZero d] {Ω : Type*} [Measura
     (hlip : ∀ x y, ‖gradient f x-gradient f y‖ ≤ L*‖x-y‖) (x : Point d) :
     let q := (sphereLaw (Point d) : Measure (sphere (0 : Point d) 1)).prod (p.prod p)
     (∫ w, ‖twoPointEstimate g h x w.1 w.2‖^2 ∂q) ≤
-      8*(d:ℝ)*‖gradient (ballSmooth f h) x‖^2+10*(d:ℝ)^2*L^2*h^2+(d:ℝ)^2*σ^2/h^2 := by
+      8*(d:ℝ)*‖gradient (ballSmooth f h) x‖^2+((d:ℝ)^2/4+8*(d:ℝ))*L^2*h^2+(d:ℝ)^2*σ^2/h^2 := by
   intro q
   have hb := (twoPoint_sphere_oracle p hg hi hm hvi hv hL hh hc hd hlip x).2.2.2
   have he := ballSmooth_gradient_bias hL hh.le hd hlip x
@@ -2268,11 +2268,12 @@ lemma twoPoint_sphere_relative_moment {d : ℕ} [NeZero d] {Ω : Type*} [Measura
   have ht2 := mul_self_le_mul_self (norm_nonneg _) ht
   have hs : ‖gradient f x‖^2 ≤ 2*‖gradient (ballSmooth f h) x‖^2+2*L^2*h^2 := by
     nlinarith [sq_nonneg (L*h-‖gradient (ballSmooth f h) x‖)]
-  have hd1 : (1:ℝ) ≤ d := by exact_mod_cast NeZero.pos d
-  have hd2 : (d:ℝ) ≤ (d:ℝ)^2 := by nlinarith
-  have hcoef := mul_le_mul_of_nonneg_right hd2 (show 0 ≤ L^2*h^2 by positivity)
+  have hd1 : (1:ℝ) ≤ (d:ℝ) := by exact_mod_cast NeZero.pos d
   have hs' := mul_le_mul_of_nonneg_left hs (show 0 ≤ 4*(d:ℝ) by positivity)
-  nlinarith [sq_nonneg ((d:ℝ)*L*h)]
+  refine hb.trans ?_
+  have key : ((d:ℝ)^2/4+8*(d:ℝ))*L^2*h^2 =
+      ((d:ℝ)*L*h)^2/4+8*(d:ℝ)*L^2*h^2 := by ring
+  nlinarith [hs', hd1, key]
 
 end OracleTemplate.ZerothOrder
 

@@ -6,7 +6,7 @@ namespace OracleTemplate.ZerothOrder.AcceleratedTwoPointZerothOrderConvex
 
 open LongTails.Setups.ZerothOrderSmoothAndConvex
 
-noncomputable def budget : (let S := spec; S.Params → Fin S.numOracles → ℕ) := fun q _ => max 1 ⌈64 * q.d * Real.sqrt (q.L * q.R ^ 2 / q.ε) + 512 * q.L * q.d ^ 2 * q.R ^ 2 * q.σ / q.ε ^ 2 + 256 * q.L * q.d ^ 2 * q.R ^ 2 * q.σ ^ 2 / q.ε ^ 3 + 1⌉₊ * 2
+noncomputable def budget : (let S := spec; S.Params → Fin S.numOracles → ℕ) := fun q _ => max 1 ⌈32 * q.d * Real.sqrt (q.L * q.R ^ 2 / q.ε) + 40 * q.d ^ 2 * q.L * q.R ^ 2 * q.σ / q.ε ^ 2 + 256 * q.d * q.L * q.R ^ 2 * q.σ / q.ε ^ 2 + 128 * q.L * q.d ^ 2 * q.R ^ 2 * q.σ ^ 2 / q.ε ^ 3 + 1⌉₊ * 2
 
 set_option maxHeartbeats 1500000 in
 theorem result :

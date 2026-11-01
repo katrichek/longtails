@@ -776,8 +776,8 @@ lemma twoPoint_variance_bound {L σ ε d R : ℝ}
     (hL : 0 < L) (hσ : 0 ≤ σ) (hε : 0 < ε) (hd : 0 < d) :
     let h := Real.sqrt (min (ε/(4*L)) (σ/L+ε/(128*L*d*(Real.sqrt (L*R^2/ε)+1))))
     0 < h ∧ L*h^2/2 ≤ ε/8 ∧
-      10*d^2*L^2*h^2+d^2*σ^2/h^2 ≤
-        11*L*d^2*σ+10*L*d*ε/(128*(Real.sqrt (L*R^2/ε)+1))+4*L*d^2*σ^2/ε := by
+      (d^2/4+8*d)*L^2*h^2+d^2*σ^2/h^2 ≤
+        (5*d^2/4+8*d)*L*σ+(d/4+8)*L*ε/(128*(Real.sqrt (L*R^2/ε)+1))+4*L*d^2*σ^2/ε := by
   let a := Real.sqrt (L*R^2/ε)
   let A := ε/(4*L)
   let C := ε/(128*L*d*(a+1))
@@ -792,52 +792,57 @@ lemma twoPoint_variance_bound {L σ ε d R : ℝ}
     rw [he] at hb
     linarith
   · rw [hs]
-    have hb := mul_le_mul_of_nonneg_left (min_le_right A (σ/L+C)) (show 0 ≤ 10*d^2*L^2 by positivity)
+    have hb := mul_le_mul_of_nonneg_left (min_le_right A (σ/L+C)) (show 0 ≤ (d^2/4+8*d)*L^2 by positivity)
     have hn := mul_le_mul_of_nonneg_left ht.2 (sq_nonneg d)
-    have he : 10*d^2*L^2*(σ/L+C)+d^2*(σ^2/A+L*σ) =
-        11*L*d^2*σ+10*L*d*ε/(128*(a+1))+4*L*d^2*σ^2/ε := by
+    have he : (d^2/4+8*d)*L^2*(σ/L+C)+d^2*(σ^2/A+L*σ) =
+        (5*d^2/4+8*d)*L*σ+(d/4+8)*L*ε/(128*(a+1))+4*L*d^2*σ^2/ε := by
       dsimp [A,C]
       field_simp; ring
-    change _ ≤ 11*L*d^2*σ+10*L*d*ε/(128*(a+1))+4*L*d^2*σ^2/ε
+    change _ ≤ (5*d^2/4+8*d)*L*σ+(d/4+8)*L*ε/(128*(a+1))+4*L*d^2*σ^2/ε
     rw [← he]
     convert add_le_add hb hn using 1; ring
 
 lemma twoPoint_variance_budget {L R σ ε d v : ℝ} {K : ℕ}
-    (hL : 0 < L) (hσ : 0 ≤ σ) (hε : 0 < ε) (hd : 0 ≤ d)
-    (hv : v ≤ 11*L*d^2*σ+10*L*d*ε/(128*(Real.sqrt (L*R^2/ε)+1))+4*L*d^2*σ^2/ε)
-    (hK : 64*d*Real.sqrt (L*R^2/ε)+512*L*d^2*R^2*σ/ε^2+256*L*d^2*R^2*σ^2/ε^3+1 ≤ K) :
+    (hL : 0 < L) (hσ : 0 ≤ σ) (hε : 0 < ε) (hd : 1 ≤ d)
+    (hv : v ≤ (5*d^2/4+8*d)*L*σ+(d/4+8)*L*ε/(128*(Real.sqrt (L*R^2/ε)+1))+4*L*d^2*σ^2/ε)
+    (hK : 32*d*Real.sqrt (L*R^2/ε)+40*d^2*L*R^2*σ/ε^2+256*d*L*R^2*σ/ε^2+128*L*d^2*R^2*σ^2/ε^3+1 ≤ K) :
     1024*L*d^2*R^2/ε ≤ (K:ℝ)^2 ∧ 32*v*R^2/ε^2 ≤ K := by
   let a := Real.sqrt (L*R^2/ε)
   have ha : 0 ≤ a := Real.sqrt_nonneg _
   have ha2 : a^2=L*R^2/ε := Real.sq_sqrt (by positivity)
-  have h1 : 0 ≤ 512*L*d^2*R^2*σ/ε^2 := by positivity
-  have h2 : 0 ≤ 256*L*d^2*R^2*σ^2/ε^3 := by positivity
-  have hak : 32*d*a ≤ (K:ℝ) := by change 64*d*a+_+_+1 ≤ _ at hK; nlinarith
+  have h1 : 0 ≤ 40*d^2*L*R^2*σ/ε^2 := by positivity
+  have h2 : 0 ≤ 256*d*L*R^2*σ/ε^2 := by positivity
+  have h3 : 0 ≤ 128*L*d^2*R^2*σ^2/ε^3 := by positivity
+  have hak : 32*d*a ≤ (K:ℝ) := by change 32*d*a+_+_+_+1 ≤ _ at hK; nlinarith
   have hdet : 1024*L*d^2*R^2/ε ≤ (K:ℝ)^2 := by
     have hh := mul_self_le_mul_self (show 0 ≤ 32*d*a by positivity) hak
     have he : 1024*L*d^2*R^2/ε=(32*d*a)^2 := by rw [mul_pow,mul_pow,ha2]; ring
     rw [he]
     nlinarith only [hh]
-  have hfloor : 32*(10*L*d*ε/(128*(a+1)))*R^2/ε^2 ≤ (5/2:ℝ)*d*a := by
-    have he : 32*(10*L*d*ε/(128*(a+1)))*R^2/ε^2=(5/2:ℝ)*d*(L*R^2/ε)/(a+1) := by field_simp; ring
-    rw [he,← ha2]
-    apply (div_le_iff₀ (by positivity : 0 < a+1)).mpr
-    nlinarith [mul_nonneg hd ha]
+  have hfloor : 32*((d/4+8)*L*ε/(128*(a+1)))*R^2/ε^2 ≤ 32*d*a := by
+    have he : 32*((d/4+8)*L*ε/(128*(a+1)))*R^2/ε^2 = (d+32)*a^2/(16*(a+1)) := by
+      rw [ha2]; field_simp; ring
+    rw [he]
+    have hlt : (d+32)*a^2/(16*(a+1)) ≤ (d+32)*a/16 := by
+      apply (div_le_iff₀ (by positivity : (0:ℝ) < 16*(a+1))).mpr
+      nlinarith [ha, sq_nonneg a]
+    have hdr : (d+32)*a/16 ≤ 32*d*a := by
+      apply (div_le_iff₀ (by norm_num : (0:ℝ) < 16)).mpr
+      nlinarith [hd, ha]
+    linarith
   have hv' := mul_le_mul_of_nonneg_right hv (show 0 ≤ 32*R^2/ε^2 by positivity)
-  have he : (11*L*d^2*σ+10*L*d*ε/(128*(a+1))+4*L*d^2*σ^2/ε)*(32*R^2/ε^2) =
-      352*L*d^2*R^2*σ/ε^2+32*(10*L*d*ε/(128*(a+1)))*R^2/ε^2+128*L*d^2*R^2*σ^2/ε^3 := by ring
+  have he : ((5*d^2/4+8*d)*L*σ+(d/4+8)*L*ε/(128*(a+1))+4*L*d^2*σ^2/ε)*(32*R^2/ε^2) =
+      (40*d^2+256*d)*L*R^2*σ/ε^2+32*((d/4+8)*L*ε/(128*(a+1)))*R^2/ε^2+
+        128*L*d^2*R^2*σ^2/ε^3 := by ring
   change v*(32*R^2/ε^2) ≤ _ at hv'
   rw [he] at hv'
-  have hn1 : 352*L*d^2*R^2*σ/ε^2 ≤ 512*L*d^2*R^2*σ/ε^2 := by
-    apply div_le_div_of_nonneg_right _ (sq_nonneg ε)
-    nlinarith [mul_nonneg (mul_nonneg (mul_nonneg hL.le (sq_nonneg d)) (sq_nonneg R)) hσ]
-  have hn2 : 128*L*d^2*R^2*σ^2/ε^3 ≤ 256*L*d^2*R^2*σ^2/ε^3 := by
-    apply div_le_div_of_nonneg_right _ (by positivity)
-    nlinarith [mul_nonneg (mul_nonneg (mul_nonneg hL.le (sq_nonneg d)) (sq_nonneg R)) (sq_nonneg σ)]
-  change 64*d*a+_+_+1 ≤ _ at hK
   have heleft : v*(32*R^2/ε^2)=32*v*R^2/ε^2 := by ring
   rw [heleft] at hv'
-  exact ⟨hdet,by nlinarith [mul_nonneg hd ha]⟩
+  refine ⟨hdet, ?_⟩
+  change 32*d*a+_+_+_+1 ≤ _ at hK
+  have hsplit : (40*d^2+256*d)*L*R^2*σ/ε^2 =
+      40*d^2*L*R^2*σ/ε^2+256*d*L*R^2*σ/ε^2 := by ring
+  linarith [hv', hfloor, hK, hsplit]
 
 lemma coupled_tuning {D R ε v δ : ℝ} {K : ℕ}
     (hD : 0 < D) (hε : 0 < ε) (hv : 0 ≤ v) (hK : 0 < K)
@@ -897,7 +902,7 @@ lemma twoPoint_rate {d K : ℕ} [NeZero d] {Ω : Type} [MeasurableSpace Ω]
     (x0 u : Point d) (hmin : IsMinOn f univ u) (hu : ‖x0-u‖ ≤ R) :
     let oracle := fun (x : Point d) (w : sphere (0 : Point d) 1 × (Ω × Ω)) => twoPointEstimate g h x w.1 w.2
     let q := (sphereLaw (Point d) : Measure (sphere (0 : Point d) 1)).prod (p.prod p)
-    let v := 10*(d:ℝ)^2*L^2*h^2+(d:ℝ)^2*σ^2/h^2
+    let v := ((d:ℝ)^2/4+8*(d:ℝ))*L^2*h^2+(d:ℝ)^2*σ^2/h^2
     let output := fun ξ : Fin K → (sphere (0 : Point d) 1 × (Ω × Ω)) => (coupledRun oracle M (8*d) K 0 x0 x0 ξ).1
     Integrable (fun ξ => f (output ξ)-f u) (Measure.pi fun _ : Fin K => q) ∧
       (∫ ξ, f (output ξ)-f u ∂Measure.pi (fun _ : Fin K => q)) ≤
@@ -921,7 +926,8 @@ lemma twoPoint_rate {d K : ℕ} [NeZero d] {Ω : Type} [MeasurableSpace Ω]
   have hG : Measurable (Function.uncurry oracle) := hG0
   have hOracle (x : Point d) := twoPoint_sphere_oracle p hgm hgi hmean hvi hv hL.le hh hc hd hlip x
   have hmoment (x : Point d) : (∫ w, ‖oracle x w‖^2 ∂q) ≤ (8*(d:ℝ))*‖gradient F x‖^2+v := by
-    simpa only [add_assoc] using twoPoint_sphere_relative_moment p hgm hgi hmean hvi hv hL.le hh hc hd hlip x
+    simpa only [add_assoc] using
+      twoPoint_sphere_relative_moment p hgm hgi hmean hvi hv hL.le hh hc hd hlip x
   have hr := coupled_expected_rate (g := oracle) (p := q) (f := F) hL.le hM (show 0 ≤ 8*(d:ℝ) by positivity)
     (show 0 ≤ v by dsimp [v]; positivity)
     (show 2*L*(8*(d:ℝ))^2 ≤ M by nlinarith only [hLM])
@@ -967,8 +973,8 @@ lemma twoPoint_accuracy {d : ℕ} [NeZero d] {Ω : Type} [MeasurableSpace Ω]
     (hv : ∀ x, (∫ ω, (g x ω-f x)^2 ∂p) ≤ σ^2)
     (x0 u : Point d) (hmin : IsMinOn f univ u) (hu : ‖x0-u‖ ≤ R) :
     let h := Real.sqrt (min (ε/(4*L)) (σ/L+ε/(128*L*d*(Real.sqrt (L*R^2/ε)+1))))
-    let v := 10*(d:ℝ)^2*L^2*h^2+(d:ℝ)^2*σ^2/h^2
-    let K := max 1 ⌈64*d*Real.sqrt (L*R^2/ε)+512*L*d^2*R^2*σ/ε^2+256*L*d^2*R^2*σ^2/ε^3+1⌉₊
+    let v := ((d:ℝ)^2/4+8*(d:ℝ))*L^2*h^2+(d:ℝ)^2*σ^2/h^2
+    let K := max 1 ⌈32*(d:ℝ)*Real.sqrt (L*R^2/ε)+40*(d:ℝ)^2*L*R^2*σ/ε^2+256*(d:ℝ)*L*R^2*σ/ε^2+128*L*(d:ℝ)^2*R^2*σ^2/ε^3+1⌉₊
     let M := 128*L*d^2+8*(K:ℝ)*v/ε
     let q := (sphereLaw (Point d) : Measure (sphere (0 : Point d) 1)).prod (p.prod p)
     let oracle := fun (x : Point d) (w : sphere (0 : Point d) 1 × (Ω × Ω)) => twoPointEstimate g h x w.1 w.2
@@ -976,12 +982,13 @@ lemma twoPoint_accuracy {d : ℕ} [NeZero d] {Ω : Type} [MeasurableSpace Ω]
       (∫ ξ, f (coupledRun oracle M (8*d) K 0 x0 x0 ξ).1-f u ∂Measure.pi (fun _ : Fin K => q)) ≤ ε := by
   intro h v K M q oracle
   have hdr : (0:ℝ) < d := by exact_mod_cast NeZero.pos d
+  have hdr1 : (1:ℝ) ≤ d := by exact_mod_cast NeZero.pos d
   have ht := twoPoint_variance_bound (R := R) hL hσ hε hdr
   change 0 < h ∧ L*h^2/2 ≤ ε/8 ∧ v ≤ _ at ht
   have hK : 0 < K := lt_of_lt_of_le Nat.zero_lt_one (le_max_left _ _)
-  have hceil : 64*d*Real.sqrt (L*R^2/ε)+512*L*d^2*R^2*σ/ε^2+256*L*d^2*R^2*σ^2/ε^3+1 ≤ (K:ℝ) :=
+  have hceil : 32*(d:ℝ)*Real.sqrt (L*R^2/ε)+40*(d:ℝ)^2*L*R^2*σ/ε^2+256*(d:ℝ)*L*R^2*σ/ε^2+128*L*(d:ℝ)^2*R^2*σ^2/ε^3+1 ≤ (K:ℝ) :=
     (Nat.le_ceil _).trans (Nat.cast_le.mpr (le_max_right _ _))
-  have hb := twoPoint_variance_budget hL hσ hε hdr.le ht.2.2 hceil
+  have hb := twoPoint_variance_budget hL hσ hε hdr1 ht.2.2 hceil
   have hv0 : 0 ≤ v := by dsimp [v]; positivity
   have hM : 0 < M := by dsimp [M]; positivity
   have hLM : 128*L*(d:ℝ)^2 ≤ M := le_add_of_nonneg_right (by positivity)
