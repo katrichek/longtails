@@ -37,7 +37,7 @@ jobs:
             lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'lakefile.toml') }}-
 
       - name: Build
-        run: ./build.sh 2>&1 | tee build.log
+        run: python3 infra/build.py 2>&1 | tee build.log
 
       - name: Install Ruff
         run: |

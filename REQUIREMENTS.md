@@ -14,7 +14,7 @@ Run the following command from the repository root to fetch the Mathlib build
 cache and build the project:
 
 ```sh
-./build.sh
+python3 infra/build.py
 ```
 
 ## Contribution (optional)

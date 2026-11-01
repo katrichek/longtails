@@ -106,7 +106,7 @@ Explore more [setups](LongTails/Setups/) and [complexity bounds](LongTails/Theor
 
 ## How to Use It?
 
-**Install the prerequisites.** Install Elan and Python 3 ([REQUIREMENTS.md](REQUIREMENTS.md)). Clone the repository. Run `./build.sh` from its root (It downloads the Mathlib cache, plus roughly 30 minutes to an hour for the full build). For local use, it is sufficient to build just the theorem you need: `./build.sh LongTails.Theorems.YourTheorem`. This is much faster, about 2–3 minutes for the tutorial theorem after the cache download.
+**Install the prerequisites.** Install Elan and Python 3 ([REQUIREMENTS.md](REQUIREMENTS.md)). Clone the repository. Run `python3 infra/build.py` from its root (It downloads the Mathlib cache, plus roughly 30 minutes to an hour for the full build). For local use, it is sufficient to build just the theorem you need: `python3 infra/build.py LongTails.Theorems.YourTheorem`. This is much faster, about 2–3 minutes for the tutorial theorem after the cache download.
 
 **Choose a setup and start researching.** Explore the existing [setups](LongTails/Setups/) or ask an agent to formalize a new **Setup**. Check that its assumptions, oracle model, and accuracy criterion match your intended problem, then ask your agent to design a method and prove a new **Complexity** bound. Finally, run `python3 run_comparator.py YourTheorem.lean` to independently audit the theorem and its **Complexity** bound against the **Setup**.
 
@@ -114,7 +114,7 @@ Explore more [setups](LongTails/Setups/) and [complexity bounds](LongTails/Theor
 
 You're welcome to use our framework to check your ideas locally. If you'd like to contribute your results, please follow the steps below.
 
-Run `./lint.sh` to check formatting, build the code, and run the linters. Both `./build.sh` and `./lint.sh` regenerate `LongTails.lean` automatically; this generated import index is ignored by Git. Once lint and the Comparator audit both pass, open a pull request explaining the setup, bound, and contribution.
+Run `./lint.sh` to check formatting, build the code, and run the linters. Both `python3 infra/build.py` and `./lint.sh` regenerate `LongTails.lean` automatically; this generated import index is ignored by Git. Once lint and the Comparator audit both pass, open a pull request explaining the setup, bound, and contribution.
 
 ## Tutorial
 
@@ -143,7 +143,7 @@ K = 1 + \left\lceil\frac{4L\Delta}{\varepsilon^2}+\frac{8L\Delta\sigma^2}{\varep
 
 3. **Verify the complexity.** Run these commands from the repository root:
    ```sh
-   ./build.sh LongTails.Theorems.SgdNonconvex
+   python3 infra/build.py LongTails.Theorems.SgdNonconvex
    python3 run_comparator.py SgdNonconvex.lean
    ```
    If the build and audit pass, the **Complexity** bound is verified against the formal **Setup**. The audit ends with this message, shown in green in the terminal: "Checked 1 convergence results and their budgets. The solutions are okay!"
@@ -157,7 +157,7 @@ K = 1 + \left\lceil\frac{4L\Delta}{\varepsilon^2}+\frac{8L\Delta\sigma^2}{\varep
 
    Open <http://127.0.0.1:8000/> and find **StochasticSmoothNonconvex** to inspect its Lean source and **Complexity** bound. The build does not run Codex; descriptions and references appear only if they have already been generated.
 
-Once you're done experimenting, you can remove the copied files with `git clean -f -- LongTails/`, provided you haven't staged or committed them. Preview the list first with `git clean -n -- LongTails/`: this also removes any other untracked files under `LongTails/`. The next `./build.sh` or `./lint.sh` run regenerates `LongTails.lean` after cleanup.
+Once you're done experimenting, you can remove the copied files with `git clean -f -- LongTails/`, provided you haven't staged or committed them. Preview the list first with `git clean -n -- LongTails/`: this also removes any other untracked files under `LongTails/`. The next `python3 infra/build.py` or `./lint.sh` run regenerates `LongTails.lean` after cleanup.
 
 ## Citation
 

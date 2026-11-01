@@ -22,7 +22,7 @@ project preferences; newer explicit user requests take precedence.
 - Put public theorem exports in `LongTails/Theorems/` so the audit discovers them.
 - Keep public declaration names distinct across modules so `LongTails.lean` can
   import the whole library. This file is generated and ignored by Git.
-  `./build.sh` and `./lint.sh` regenerate it automatically with
+  `python3 infra/build.py` and `./lint.sh` regenerate it automatically with
   `lake exe mk_all --lib LongTails`; do not commit it.
 - Each file in `LongTails/Theorems/` must contain exactly one main convergence
   theorem, `result : Convergence spec budget`. Put distinct mathematical cases in
@@ -102,7 +102,8 @@ project preferences; newer explicit user requests take precedence.
 - After changing Python code, run `ruff check .` and `ruff format --check .`
   using the Ruff version documented in `REQUIREMENTS.md`. Fix all reported
   issues before finishing; use `ruff format` on changed files as needed.
-- After changing Lean declarations or imports, run `./build.sh` and `./lint.sh`.
+- After changing Lean declarations or imports, run `python3 infra/build.py` and
+  `./lint.sh`.
   Both must pass before submitting a PR. For new results, run
   `python3 run_comparator.py <TheoremName>.lean` for each new theorem to audit its
   convergence result and budget, allowing only `propext`, `Classical.choice`,

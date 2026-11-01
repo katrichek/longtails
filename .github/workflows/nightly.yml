@@ -45,7 +45,7 @@ jobs:
           Verified at (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)
           Lean toolchain: $(cat lean-toolchain)
           Dependencies: lake-manifest.json at the verified commit
-          Build: ./build.sh passed
+          Build: python3 infra/build.py passed
           Lint: ./lint.sh passed
           Audit: python3 -u run_comparator.py -j 2 passed
           Permitted axioms: propext, Classical.choice, Quot.sound

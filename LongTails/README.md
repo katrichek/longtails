@@ -181,7 +181,7 @@ For this theorem, the constructor chooses gradient descent. Other methods can pr
 Run these commands from the repository root:
 
 ```sh
-./build.sh LongTails.Theorems.GdConvex
+python3 infra/build.py LongTails.Theorems.GdConvex
 python3 run_comparator.py GdConvex.lean
 ```
 

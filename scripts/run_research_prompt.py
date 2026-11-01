@@ -170,7 +170,7 @@ def main(argv=None):
         os.fsdecode(worktrees.split(b"\nHEAD ", 1)[0]).removeprefix("worktree ")
     )
     prepared = subprocess.run(
-        ["./build.sh"],
+        [sys.executable, "infra/build.py"],
         cwd=main_root,
         check=False,
     )
