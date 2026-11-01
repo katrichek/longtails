@@ -13,19 +13,19 @@ lemma rightPoint_eq_ptRight (s : State) : rightPoint s = ptRight s.lo s.hi := rf
 
 lemma lo_inner_update (s : State) (v : ℝ × ℝ) :
     ((inner R x0).update s v).lo = (if v.1 > v.2 then leftPoint s else s.lo) := by
-  simp only [inner]
+  simp only [inner, step]
   split_ifs <;> rfl
 
 lemma hi_inner_update (s : State) (v : ℝ × ℝ) :
     ((inner R x0).update s v).hi = (if v.1 > v.2 then s.hi else rightPoint s) := by
-  simp only [inner]
+  simp only [inner, step]
   split_ifs <;> rfl
 
 lemma champVal_inner_update (s : State) (v : ℝ × ℝ) :
     ((inner R x0).update s v).champVal =
       (if s.level = 0 then min v.1 v.2
         else if min v.1 v.2 < s.champVal then min v.1 v.2 else s.champVal) := by
-  simp only [inner]
+  simp only [inner, step]
   split_ifs <;> rfl
 
 lemma champ_inner_update (s : State) (v : ℝ × ℝ) :
@@ -33,7 +33,7 @@ lemma champ_inner_update (s : State) (v : ℝ × ℝ) :
       (if s.level = 0 then (if v.1 > v.2 then rightPoint s else leftPoint s)
         else if min v.1 v.2 < s.champVal then
           (if v.1 > v.2 then rightPoint s else leftPoint s) else s.champ) := by
-  simp only [inner]
+  simp only [inner, step]
   split_ifs <;> rfl
 
 lemma interval_inner_update (s : State) (v : ℝ × ℝ) :
