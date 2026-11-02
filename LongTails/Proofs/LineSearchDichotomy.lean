@@ -46,7 +46,7 @@ lemma dichotomy_of_ternary_layout {f : ℝ → ℝ} (hconv : ConvexOn ℝ univ f
   · right
     have hlt : xstar < a ∨ b < xstar := by
       by_contra hcon
-      push_neg at hcon
+      push Not at hcon
       exact hmem ⟨hcon.1, hcon.2⟩
     rcases hlt with hxa | hbx
     · have hxb : xstar < b := lt_trans hxa hab

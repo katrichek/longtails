@@ -21,7 +21,7 @@ lemma integral_sum_eval_pi {p : Measure Ω} [IsProbabilityMeasure p] {m : ℕ}
     (φ : Ω → ℝ) (hint : Integrable φ p) :
     ∫ β : Fin m → Ω, (∑ i : Fin m, φ (β i)) ∂(Measure.pi fun _ : Fin m => p)
       = (m : ℝ) * ∫ z, φ z ∂p := by
-  rw [integral_finset_sum _ (fun i _ => integrable_eval_pi φ hint i)]
+  rw [integral_finsetSum _ (fun i _ => integrable_eval_pi φ hint i)]
   simp only [integral_eval_pi φ hint]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
 
@@ -63,7 +63,6 @@ lemma block_center_sq_le {Ω : Type} [MeasurableSpace Ω] {p : Measure Ω} [IsPr
       ∫ β : Fin m → Ω, (∑ k : Fin m, (φ (β k) - c)) ^ 2 ∂(Measure.pi fun _ : Fin m => p)
         ≤ (m : ℝ) * σ ^ 2 := by
   let ν : Measure (Fin m → Ω) := Measure.pi fun _ : Fin m => p
-  haveI : IsProbabilityMeasure ν := inferInstanceAs (IsProbabilityMeasure (Measure.pi _))
   let X : Fin m → (Fin m → Ω) → ℝ := fun k β => φ (β k) - c
   have hXm : ∀ k, Measurable (X k) := fun k => (hφm.comp (measurable_pi_apply k)).sub_const c
   have hmem : ∀ k, MemLp (X k) 2 ν := fun k =>
@@ -95,9 +94,9 @@ lemma block_center_sq_le {Ω : Type} [MeasurableSpace Ω] {p : Measure Ω} [IsPr
   have hsq : ∫ β, (∑ k : Fin m, X k β) ^ 2 ∂ν
       = ∑ k : Fin m, ∑ l : Fin m, ∫ β, X k β * X l β ∂ν := by
     simp only [hpt]
-    rw [integral_finset_sum _ (fun k _ => integrable_finset_sum _ (fun l _ => hprod k l))]
+    rw [integral_finsetSum _ (fun k _ => integrable_finsetSum _ (fun l _ => hprod k l))]
     exact Finset.sum_congr rfl fun k _ =>
-      integral_finset_sum _ (fun l _ => hprod k l)
+      integral_finsetSum _ (fun l _ => hprod k l)
   have hsplit : ∑ k : Fin m, ∑ l : Fin m, ∫ β, X k β * X l β ∂ν
       = (∑ k : Fin m, ∫ β, X k β * X k β ∂ν)
         + ∑ k : Fin m, ∑ l ∈ Finset.univ.erase k, ∫ β, X k β * X l β ∂ν := by
@@ -114,7 +113,7 @@ lemma block_center_sq_le {Ω : Type} [MeasurableSpace Ω] {p : Measure Ω} [IsPr
     rw [show (fun β : Fin m → Ω => (∑ k : Fin m, X k β) ^ 2)
         = fun β => ∑ k : Fin m, ∑ l : Fin m, X k β * X l β from by
       funext β; exact hpt β]
-    exact integrable_finset_sum _ (fun k _ => integrable_finset_sum _ (fun l _ => hprod k l))
+    exact integrable_finsetSum _ (fun k _ => integrable_finsetSum _ (fun l _ => hprod k l))
   refine ⟨by rw [hpointwise]; exact hIntSq, ?_⟩
   rw [hpointwise, hsq, hsplit, hoffsum, add_zero]
   calc ∑ k : Fin m, ∫ β, X k β * X k β ∂ν
@@ -132,7 +131,6 @@ lemma block_mean_sq_le {Ω : Type} [MeasurableSpace Ω] {p : Measure Ω} [IsProb
     ∫ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c) ^ 2
         ∂(Measure.pi fun _ : Fin m => p) ≤ σ ^ 2 / m := by
   let ν : Measure (Fin m → Ω) := Measure.pi fun _ : Fin m => p
-  haveI : IsProbabilityMeasure ν := inferInstanceAs (IsProbabilityMeasure (Measure.pi _))
   obtain ⟨hInt, hle⟩ := block_center_sq_le (Ω := Ω) (p := p) (m := m) φ c σ hφm hint hl2 hmean hvar
   have hpt : ∀ β : Fin m → Ω, ((∑ k : Fin m, φ (β k)) / (m : ℝ) - c)
       = (1 / (m : ℝ)) * (∑ k : Fin m, (φ (β k) - c)) := by
@@ -174,7 +172,6 @@ lemma abs_le_sq_div_add {z t : ℝ} (ht : 0 < t) : |z| ≤ z ^ 2 / (2 * t) + t /
 lemma eval_sub_const_memLp {p : Measure Ω} [IsProbabilityMeasure p] {m : ℕ}
     (φ : Ω → ℝ) (c : ℝ) (hφ : MemLp (fun z : Ω => φ z - c) 2 p) (i : Fin m) :
     MemLp (fun β : Fin m → Ω => φ (β i) - c) 2 (Measure.pi fun _ : Fin m => p) := by
-  haveI : ∀ i : Fin m, IsProbabilityMeasure p := fun _ => ‹IsProbabilityMeasure p›
   exact MemLp.comp_measurePreserving hφ (measurePreserving_eval (μ := fun _ : Fin m => p) i)
 
 lemma block_mean_abs_le {p : Measure Ω} [IsProbabilityMeasure p]
@@ -189,7 +186,7 @@ lemma block_mean_abs_le {p : Measure Ω} [IsProbabilityMeasure p]
       (by simpa only [Real.norm_eq_abs, sq_abs] using hl2)
   have hmemSum : MemLp (fun β : Fin m → Ω => ∑ k : Fin m, (φ (β k) - c)) 2
       (Measure.pi fun _ : Fin m => p) :=
-    memLp_finset_sum Finset.univ (fun k _ => eval_sub_const_memLp φ c hmemφ k)
+    memLp_finsetSum Finset.univ (fun k _ => eval_sub_const_memLp φ c hmemφ k)
   have hZeq : (fun β : Fin m → Ω => (∑ k : Fin m, φ (β k)) / (m : ℝ) - c)
       = fun β => (1 / (m : ℝ)) * (∑ k : Fin m, (φ (β k) - c)) := by
     funext β

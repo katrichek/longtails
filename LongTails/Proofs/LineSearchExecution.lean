@@ -32,9 +32,9 @@ lemma decode_queries {Ω : Type} (R x0 : ℝ) {m : ℕ}
   simp only [decode, queries]
   congr 2
   · refine Finset.sum_congr rfl fun j _ => ?_
-    simp only [Fin.val_mk, if_pos j.isLt]
+    simp only [ite_eq_left j.isLt]
   · refine Finset.sum_congr rfl fun j _ => ?_
-    simp only [Fin.val_mk, if_neg (by omega : ¬ (m + j.val < m))]
+    simp only [ite_eq_right (by omega : ¬ (m + j.val < m))]
     congr 1
     ring
 

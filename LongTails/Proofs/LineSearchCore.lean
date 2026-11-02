@@ -44,20 +44,20 @@ lemma rightPoint_interval {s : State} (hs : s.lo ≤ s.hi) :
 lemma step_level0 {s : State} (h0 : s.level = 0) (v : ℝ × ℝ) :
     (step s v).champ = (if v.1 > v.2 then rightPoint s else leftPoint s) ∧
       (step s v).champVal = min v.1 v.2 := by
-  rw [step, if_pos h0]
+  rw [step, ite_eq_left h0]
   exact ⟨rfl, rfl⟩
 
 lemma step_champ_updated {s : State} (h0 : s.level ≠ 0) (v : ℝ × ℝ)
     (hc : min v.1 v.2 < s.champVal) :
     (step s v).champ = (if v.1 > v.2 then rightPoint s else leftPoint s) ∧
       (step s v).champVal = min v.1 v.2 := by
-  rw [step, if_neg h0, if_pos hc]
+  rw [step, ite_eq_right h0, ite_eq_left hc]
   exact ⟨rfl, rfl⟩
 
 lemma step_champ_kept {s : State} (h0 : s.level ≠ 0) (v : ℝ × ℝ)
     (hc : ¬ min v.1 v.2 < s.champVal) :
     (step s v).champ = s.champ ∧ (step s v).champVal = s.champVal := by
-  rw [step, if_neg h0, if_neg hc]
+  rw [step, ite_eq_right h0, ite_eq_right hc]
   exact ⟨rfl, rfl⟩
 
 /-- The estimate of a level dominates the true value of the champion it selects. -/
@@ -66,11 +66,11 @@ lemma lvlEstimate_le {v : ℕ → ℝ × ℝ} {f : ℝ → ℝ} {j : ℕ} :
         else leftPoint (runState R x0 v j))
       ≤ min (v j).1 (v j).2 + lvlErr R x0 v f j := by
   by_cases hv : (v j).1 > (v j).2
-  · rw [if_pos hv, min_eq_right (by linarith)]
+  · rw [ite_eq_left hv, min_eq_right (by linarith)]
     unfold lvlErr
     linarith [neg_le_abs ((v j).2 - f (rightPoint (runState R x0 v j))),
       abs_nonneg ((v j).1 - f (leftPoint (runState R x0 v j)))]
-  · rw [if_neg hv, min_eq_left (by linarith)]
+  · rw [ite_eq_right hv, min_eq_left (by linarith)]
     unfold lvlErr
     linarith [neg_le_abs ((v j).1 - f (leftPoint (runState R x0 v j))),
       abs_nonneg ((v j).2 - f (rightPoint (runState R x0 v j)))]
@@ -78,15 +78,15 @@ lemma lvlEstimate_le {v : ℕ → ℝ × ℝ} {f : ℝ → ℝ} {j : ℕ} :
 lemma step_lo_ge (s : State) (v : ℝ × ℝ) (hs : s.lo ≤ s.hi) : s.lo ≤ (step s v).lo := by
   rw [lo_step]
   by_cases hv : v.1 > v.2
-  · rw [if_pos hv]
+  · rw [ite_eq_left hv]
     exact (leftPoint_interval hs).1
-  · rw [if_neg hv]
+  · rw [ite_eq_right hv]
 
 lemma step_hi_le (s : State) (v : ℝ × ℝ) (hs : s.lo ≤ s.hi) : (step s v).hi ≤ s.hi := by
   rw [hi_step]
   by_cases hv : v.1 > v.2
-  · rw [if_pos hv]
-  · rw [if_neg hv]
+  · rw [ite_eq_left hv]
+  · rw [ite_eq_right hv]
     exact (rightPoint_interval hs).2
 
 lemma runState_lo_ge (v : ℕ → ℝ × ℝ) (hs : x0 - R ≤ x0 + R) (j : ℕ) :
@@ -112,9 +112,9 @@ lemma runState_len_succ (v : ℕ → ℝ × ℝ) (j : ℕ) :
   have h2 := hi_step (runState R x0 v j) (v j)
   rw [runState_succ R x0 v j]
   by_cases hv : (v j).1 > (v j).2
-  · rw [h1, h2, if_pos hv, if_pos hv, leftPoint_val]
+  · rw [h1, h2, ite_eq_left hv, ite_eq_left hv, leftPoint_val]
     ring
-  · rw [h1, h2, if_neg hv, if_neg hv, rightPoint_val]
+  · rw [h1, h2, ite_eq_right hv, ite_eq_right hv, rightPoint_val]
     ring
 
 lemma runState_len_le (v : ℕ → ℝ × ℝ) (_hs : x0 - R ≤ x0 + R) (j : ℕ) :

@@ -53,22 +53,22 @@ lemma champ_step (s : State) (v : ℝ × ℝ) :
         (if v.1 > v.2 then rightPoint s else leftPoint s) else s.champ) := by
   rw [step]
   by_cases h0 : s.level = 0
-  · rw [if_pos h0, if_pos (Or.inl h0)]
-  · rw [if_neg h0]
+  · rw [ite_eq_left h0, ite_eq_left (Or.inl h0)]
+  · rw [ite_eq_right h0]
     by_cases hc : min v.1 v.2 < s.champVal
-    · rw [if_pos hc, if_pos (Or.inr hc)]
-    · rw [if_neg hc, if_neg (not_or.mpr ⟨h0, hc⟩)]
+    · rw [ite_eq_left hc, ite_eq_left (Or.inr hc)]
+    · rw [ite_eq_right hc, ite_eq_right (not_or.mpr ⟨h0, hc⟩)]
 
 lemma champVal_step (s : State) (v : ℝ × ℝ) :
     (step s v).champVal =
       (if s.level = 0 ∨ min v.1 v.2 < s.champVal then min v.1 v.2 else s.champVal) := by
   rw [step]
   by_cases h0 : s.level = 0
-  · rw [if_pos h0, if_pos (Or.inl h0)]
-  · rw [if_neg h0]
+  · rw [ite_eq_left h0, ite_eq_left (Or.inl h0)]
+  · rw [ite_eq_right h0]
     by_cases hc : min v.1 v.2 < s.champVal
-    · rw [if_pos hc, if_pos (Or.inr hc)]
-    · rw [if_neg hc, if_neg (not_or.mpr ⟨h0, hc⟩)]
+    · rw [ite_eq_left hc, ite_eq_left (Or.inr hc)]
+    · rw [ite_eq_right hc, ite_eq_right (not_or.mpr ⟨h0, hc⟩)]
 
 variable [MeasurableSpace Ω]
 

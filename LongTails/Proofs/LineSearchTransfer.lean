@@ -42,6 +42,7 @@ lemma advance_add_one {State : Type} (F : ℕ → State → State) :
                 = StochasticGradient.advance F (K + 1) call s := rfl
             rw [h1, h2]
 
+omit [MeasurableSpace Ω] in
 /-- The line search driven by oracle replies follows the deterministic level recursion. -/
 lemma advance_runState (m : ℕ) (g : ℝ → Ω → ℝ) (R x0 : ℝ) (ξ : ℕ → Ω) :
     ∀ j : ℕ,

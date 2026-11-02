@@ -10,30 +10,30 @@ variable (R x0 : ℝ)
 lemma step_level (s : State) (v : ℝ × ℝ) : (step s v).level = s.level + 1 := by
   rw [step]
   by_cases h0 : s.level = 0
-  · rw [if_pos h0, h0]
-  · rw [if_neg h0]
+  · rw [ite_eq_left h0, h0]
+  · rw [ite_eq_right h0]
     by_cases hc : min v.1 v.2 < s.champVal
-    · rw [if_pos hc]
-    · rw [if_neg hc]
+    · rw [ite_eq_left hc]
+    · rw [ite_eq_right hc]
 
 lemma step_bounds {s : State} (hs : s.lo ≤ s.hi) (v : ℝ × ℝ) :
     (step s v).lo ≤ (step s v).hi := by
   rw [step]
   by_cases h0 : s.level = 0
-  · rw [if_pos h0]
+  · rw [ite_eq_left h0]
     by_cases hv : v.1 > v.2
-    · rw [if_pos hv, if_pos hv]; unfold leftPoint; nlinarith
-    · rw [if_neg hv, if_neg hv]; unfold rightPoint; nlinarith
-  · rw [if_neg h0]
+    · rw [ite_eq_left hv, ite_eq_left hv]; unfold leftPoint; nlinarith
+    · rw [ite_eq_right hv, ite_eq_right hv]; unfold rightPoint; nlinarith
+  · rw [ite_eq_right h0]
     by_cases hc : min v.1 v.2 < s.champVal
-    · rw [if_pos hc]
+    · rw [ite_eq_left hc]
       by_cases hv : v.1 > v.2
-      · rw [if_pos hv, if_pos hv]; unfold leftPoint; nlinarith
-      · rw [if_neg hv, if_neg hv]; unfold rightPoint; nlinarith
-    · rw [if_neg hc]
+      · rw [ite_eq_left hv, ite_eq_left hv]; unfold leftPoint; nlinarith
+      · rw [ite_eq_right hv, ite_eq_right hv]; unfold rightPoint; nlinarith
+    · rw [ite_eq_right hc]
       by_cases hv : v.1 > v.2
-      · rw [if_pos hv, if_pos hv]; unfold leftPoint; nlinarith
-      · rw [if_neg hv, if_neg hv]; unfold rightPoint; nlinarith
+      · rw [ite_eq_left hv, ite_eq_left hv]; unfold leftPoint; nlinarith
+      · rw [ite_eq_right hv, ite_eq_right hv]; unfold rightPoint; nlinarith
 
 noncomputable def runState (v : ℕ → ℝ × ℝ) : ℕ → State :=
   fun j => Nat.rec (motive := fun _ => State)
@@ -94,20 +94,20 @@ lemma champVal_step_le (s : State) (v : ℝ × ℝ) :
     (step s v).champVal ≤ min v.1 v.2 := by
   rw [step]
   by_cases h0 : s.level = 0
-  · rw [if_pos h0]
-  · rw [if_neg h0]
+  · rw [ite_eq_left h0]
+  · rw [ite_eq_right h0]
     by_cases hc : min v.1 v.2 < s.champVal
-    · rw [if_pos hc]
-    · rw [if_neg hc]
+    · rw [ite_eq_left hc]
+    · rw [ite_eq_right hc]
       exact le_of_not_gt hc
 
 lemma champVal_step_le_champ (s : State) (v : ℝ × ℝ) (h0 : ¬ s.level = 0) :
     (step s v).champVal ≤ s.champVal := by
-  rw [step, if_neg h0]
+  rw [step, ite_eq_right h0]
   by_cases hc : min v.1 v.2 < s.champVal
-  · rw [if_pos hc]
+  · rw [ite_eq_left hc]
     exact le_of_lt hc
-  · rw [if_neg hc]
+  · rw [ite_eq_right hc]
 
 lemma champVal_runState_mono (v : ℕ → ℝ × ℝ) {i j : ℕ} (hi : 1 ≤ i) (hij : i ≤ j) :
     (runState R x0 v j).champVal ≤ (runState R x0 v i).champVal := by
@@ -143,21 +143,21 @@ lemma lo_step (s : State) (v : ℝ × ℝ) :
     (step s v).lo = (if v.1 > v.2 then leftPoint s else s.lo) := by
   rw [step]
   by_cases h0 : s.level = 0
-  · rw [if_pos h0]
-  · rw [if_neg h0]
+  · rw [ite_eq_left h0]
+  · rw [ite_eq_right h0]
     by_cases hc : min v.1 v.2 < s.champVal
-    · rw [if_pos hc]
-    · rw [if_neg hc]
+    · rw [ite_eq_left hc]
+    · rw [ite_eq_right hc]
 
 lemma hi_step (s : State) (v : ℝ × ℝ) :
     (step s v).hi = (if v.1 > v.2 then s.hi else rightPoint s) := by
   rw [step]
   by_cases h0 : s.level = 0
-  · rw [if_pos h0]
-  · rw [if_neg h0]
+  · rw [ite_eq_left h0]
+  · rw [ite_eq_right h0]
     by_cases hc : min v.1 v.2 < s.champVal
-    · rw [if_pos hc]
-    · rw [if_neg hc]
+    · rw [ite_eq_left hc]
+    · rw [ite_eq_right hc]
 
 lemma leftPoint_lt_rightPoint {s : State} (hlh : s.lo < s.hi) :
     leftPoint s < rightPoint s := by
@@ -203,15 +203,15 @@ lemma harm_le_errors_of_fail {v : ℕ → ℝ × ℝ} {f : ℝ → ℝ} {xstar :
   have hlt' : xstar < leftPoint (runState R x0 v j) ∨
       rightPoint (runState R x0 v j) < xstar := by
     by_contra hcon
-    push_neg at hcon
+    push Not at hcon
     exact hnotmid ⟨hcon.1, hcon.2⟩
   rcases hlt' with hxa | hbx
   · have hv : (v j).1 > (v j).2 := by
       by_contra hv
-      push_neg at hv
+      push Not at hv
       have hmem : xstar ∈ Icc (step (runState R x0 v j) (v j)).lo
           (step (runState R x0 v j) (v j)).hi := by
-        rw [lo_step, hi_step, if_neg (by simpa using hv), if_neg (by simpa using hv)]
+        rw [lo_step, hi_step, ite_eq_right (by simpa using hv), ite_eq_right (by simpa using hv)]
         exact ⟨hgood.1, le_of_lt (lt_trans hxa hlt)⟩
       exact hfail hmem
     have hm : f (leftPoint (runState R x0 v j)) ≤ f (rightPoint (runState R x0 v j)) :=
@@ -238,7 +238,7 @@ lemma harm_le_errors_of_fail {v : ℕ → ℝ × ℝ} {f : ℝ → ℝ} {xstar :
       intro hv
       have hmem : xstar ∈ Icc (step (runState R x0 v j) (v j)).lo
           (step (runState R x0 v j) (v j)).hi := by
-        rw [lo_step, hi_step, if_pos (by simpa using hv), if_pos (by simpa using hv)]
+        rw [lo_step, hi_step, ite_eq_left (by simpa using hv), ite_eq_left (by simpa using hv)]
         exact ⟨le_of_lt (lt_trans hlt hbx), hgood.2⟩
       exact hfail hmem
     have hm : f (rightPoint (runState R x0 v j)) ≤ f (leftPoint (runState R x0 v j)) :=

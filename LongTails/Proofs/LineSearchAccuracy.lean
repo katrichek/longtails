@@ -14,6 +14,7 @@ variable {Ω : Type} [MeasurableSpace Ω] {p : Measure Ω} [hp : IsProbabilityMe
 noncomputable def V (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → Fin m → Ω) (j : ℕ) : ℝ × ℝ :=
   (estLeft R x0 m g β j, estRight R x0 m g β j)
 
+omit [MeasurableSpace Ω] in
 lemma runState_V (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → Fin m → Ω) (j : ℕ) :
     runState R x0 (V R x0 m g β) j = (pairRun R x0 m g β j).1 := by
   have hf : (fun i => (pairRun R x0 m g β (i + 1)).2) = V R x0 m g β :=
@@ -21,6 +22,7 @@ lemma runState_V (m : ℕ) (g : ℝ → Ω → ℝ) (β : ℕ → Fin m → Ω) 
   rw [← hf]
   exact (pairRun_state_eq_runState R x0 m g β j).symm
 
+omit [MeasurableSpace Ω] in
 /-- One level error written through the deterministic level error. -/
 lemma levelError_eq_lvlErr (m : ℕ) (g : ℝ → Ω → ℝ) (f : ℝ → ℝ) (β : ℕ → Fin m → Ω) (j : ℕ) :
     |estLeft R x0 m g β j - f (leftAt R x0 m g β j)|
@@ -33,6 +35,7 @@ lemma levelError_eq_lvlErr (m : ℕ) (g : ℝ → Ω → ℝ) (f : ℝ → ℝ) 
   rw [h1, h2]
   simp only [V]
 
+omit [MeasurableSpace Ω] in
 /-- Pathwise accuracy of the line search through the block-level estimation errors. -/
 lemma gap_le_sum (m : ℕ) (g : ℝ → Ω → ℝ) (f : ℝ → ℝ) (xstar L : ℝ)
     (hconv : ConvexOn ℝ univ f) (hmin : IsMinOn f univ xstar)

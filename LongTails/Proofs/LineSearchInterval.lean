@@ -36,24 +36,24 @@ lemma stepInterval_subset {l h : ℝ} (hlh : l ≤ h) (v : ℝ × ℝ) :
     l ≤ (stepInterval l h v).1 ∧ (stepInterval l h v).2 ≤ h := by
   unfold stepInterval
   by_cases hv : v.1 > v.2
-  · rw [if_pos hv]; exact ⟨le_ptLeft hlh, le_rfl⟩
-  · rw [if_neg hv]; exact ⟨le_rfl, ptRight_le hlh⟩
+  · rw [ite_eq_left hv]; exact ⟨le_ptLeft hlh, le_rfl⟩
+  · rw [ite_eq_right hv]; exact ⟨le_rfl, ptRight_le hlh⟩
 
 lemma stepInterval_len {l h : ℝ} (v : ℝ × ℝ) :
     (stepInterval l h v).2 - (stepInterval l h v).1 = 2 * (h - l) / 3 := by
   unfold stepInterval
   by_cases hv : v.1 > v.2
-  · rw [if_pos hv]; unfold ptLeft; ring
-  · rw [if_neg hv]; unfold ptRight; ring
+  · rw [ite_eq_left hv]; unfold ptLeft; ring
+  · rw [ite_eq_right hv]; unfold ptRight; ring
 
 lemma stepInterval_nonempty {l h : ℝ} (hlh : l ≤ h) (v : ℝ × ℝ) :
     (stepInterval l h v).1 ≤ (stepInterval l h v).2 := by
   unfold stepInterval
   by_cases hv : v.1 > v.2
-  · rw [if_pos hv]
+  · rw [ite_eq_left hv]
     unfold ptLeft
     nlinarith
-  · rw [if_neg hv]
+  · rw [ite_eq_right hv]
     unfold ptRight
     nlinarith
 
@@ -63,9 +63,9 @@ lemma stepInterval_contains {l h : ℝ} {x : ℝ} (hx : x ∈ Icc l h)
   have hlh : l ≤ h := le_trans hx.1 hx.2
   unfold stepInterval
   by_cases hv : v.1 > v.2
-  · rw [if_pos hv]
+  · rw [ite_eq_left hv]
     exact ⟨hmid.1, le_trans hmid.2 (ptRight_le hlh)⟩
-  · rw [if_neg hv]
+  · rw [ite_eq_right hv]
     exact ⟨le_trans (le_ptLeft hlh) hmid.1, hmid.2⟩
 
 lemma gap_le_of_not_mem_middle {xstar l h : ℝ} (hconv : ConvexOn ℝ univ f)
