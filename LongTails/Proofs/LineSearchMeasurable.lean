@@ -80,6 +80,12 @@ lemma measurableSet_disj_const {α : Type*} [MeasurableSpace α] {p : Prop} {s :
 noncomputable def blockLaw (p : Measure Ω) (m : ℕ) : Measure (ℕ → Fin m → Ω) :=
   Measure.infinitePi fun _ : ℕ => Measure.pi fun _ : Fin m => p
 
+/-- The law of countably many independent blocks of `m` i.i.d. samples is a probability measure. -/
+instance isProbabilityMeasure_blockLaw (p : Measure Ω) [IsProbabilityMeasure p] (m : ℕ) :
+    IsProbabilityMeasure (blockLaw p m) :=
+  inferInstanceAs (IsProbabilityMeasure (Measure.infinitePi fun _ : ℕ =>
+    Measure.pi fun _ : Fin m => p))
+
 /-- Evaluate the oracle at a varying point and one fixed sample slot. -/
 lemma measurable_oracle_slot {m : ℕ} {g : ℝ → Ω → ℝ} (hg : Measurable (Function.uncurry g))
     (k : Fin m) :
