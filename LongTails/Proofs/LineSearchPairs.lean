@@ -89,11 +89,11 @@ noncomputable def combine {m j : ℕ} (h : Fin (2 * j) → (Fin m → Ω))
 
 lemma combine_lt {m j : ℕ} (h : Fin (2 * j) → (Fin m → Ω)) (_t : ℕ → (Fin m → Ω))
     {i : ℕ} (hi : i < 2 * j) : combine h _t i = h ⟨i, hi⟩ := by
-  simp only [combine, dif_pos hi]
+  simp only [combine, dite_eq_left hi]
 
 lemma combine_at {m j : ℕ} (_h : Fin (2 * j) → (Fin m → Ω)) (t : ℕ → (Fin m → Ω)) :
     combine _h t (2 * j) = t 0 := by
-  simp only [combine, dif_neg (lt_irrefl _), Nat.sub_self]
+  simp only [combine, dite_eq_right (lt_irrefl _), Nat.sub_self]
 
 lemma pairRun_combine_congr {m j : ℕ} (g : ℝ → Ω → ℝ)
     (h : Fin (2 * j) → (Fin m → Ω)) (t t' : ℕ → (Fin m → Ω)) :

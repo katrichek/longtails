@@ -207,4 +207,28 @@ lemma measurable_champAt (R x0 : ℝ) (m : ℕ) (g : ℝ → Ω → ℝ)
     Measurable (fun β : ℕ → Fin m → Ω => champAt R x0 m g β j) :=
   (measurable_pairRun_components R x0 m g hg j).2.2.1
 
+lemma measurable_estLeft (R x0 : ℝ) (m : ℕ) (g : ℝ → Ω → ℝ)
+    (hg : Measurable (Function.uncurry g)) (j : ℕ) :
+    Measurable (fun β : ℕ → Fin m → Ω => estLeft R x0 m g β j) := by
+  have hleft : Measurable (fun β => leftAt R x0 m g β j) := measurable_leftAt R x0 m g hg j
+  have hsum : Measurable (fun β => ∑ k : Fin m, g (leftAt R x0 m g β j) (β (2 * j) k)) :=
+    Finset.measurable_sum Finset.univ fun k _ =>
+      (measurable_oracle_slot hg k).comp (Measurable.prodMk hleft (measurable_pi_apply _))
+  have : (fun β => estLeft R x0 m g β j)
+      = fun β => (∑ k : Fin m, g (leftAt R x0 m g β j) (β (2 * j) k)) / (m : ℝ) := rfl
+  rw [this]
+  exact Measurable.div hsum measurable_const
+
+lemma measurable_estRight (R x0 : ℝ) (m : ℕ) (g : ℝ → Ω → ℝ)
+    (hg : Measurable (Function.uncurry g)) (j : ℕ) :
+    Measurable (fun β : ℕ → Fin m → Ω => estRight R x0 m g β j) := by
+  have hright : Measurable (fun β => rightAt R x0 m g β j) := measurable_rightAt R x0 m g hg j
+  have hsum : Measurable (fun β => ∑ k : Fin m, g (rightAt R x0 m g β j) (β (2 * j + 1) k)) :=
+    Finset.measurable_sum Finset.univ fun k _ =>
+      (measurable_oracle_slot hg k).comp (Measurable.prodMk hright (measurable_pi_apply _))
+  have : (fun β => estRight R x0 m g β j)
+      = fun β => (∑ k : Fin m, g (rightAt R x0 m g β j) (β (2 * j + 1) k)) / (m : ℝ) := rfl
+  rw [this]
+  exact Measurable.div hsum measurable_const
+
 end OracleTemplate.LineSearch
