@@ -296,7 +296,7 @@ variable (d : ℕ) (Ω : Type) [MeasurableSpace Ω]
 
 set_option maxHeartbeats 1500000 in
 lemma two_point_convergence_coordinates :
-    let budget : (fixedSpaceSpec (Point d) Ω).Params → ℕ := fun (dimension, L, R, σ, ε, _) => max 1 ⌈32 * dimension * Real.sqrt (L * R ^ 2 / ε) + 40 * dimension ^ 2 * L * R ^ 2 * σ / ε ^ 2 + 256 * dimension * L * R ^ 2 * σ / ε ^ 2 + 128 * L * dimension ^ 2 * R ^ 2 * σ ^ 2 / ε ^ 3 + 1⌉₊ * 2
+    let budget : (fixedSpaceSpec (Point d) Ω).Params → ℕ := fun (dimension, L, R, σ, ε, _) => max 1 ⌈64 * dimension * Real.sqrt (L * R ^ 2 / ε) + 512 * L * dimension ^ 2 * R ^ 2 * σ / ε ^ 2 + 256 * L * dimension ^ 2 * R ^ 2 * σ ^ 2 / ε ^ 3 + 1⌉₊ * 2
     Convergence (fixedSpaceSpec (Point d) Ω) (fun p _ => budget p) := by
   classical
   rw [convergence_public]
@@ -313,8 +313,8 @@ lemma two_point_convergence_coordinates :
   refine ⟨
     letI : NeZero d := ⟨ne_of_gt hd⟩
     let h := Real.sqrt (min (ε/(4*L)) (σ/L+ε/(128*L*d*(Real.sqrt (L*R^2/ε)+1))))
-    let v := ((d:ℝ)^2/4+8*(d:ℝ))*L^2*h^2+(d:ℝ)^2*σ^2/h^2
-    let K := max 1 ⌈32 * d * Real.sqrt (L * R ^ 2 / ε) + 40 * d ^ 2 * L * R ^ 2 * σ / ε ^ 2 + 256 * d * L * R ^ 2 * σ / ε ^ 2 + 128 * L * d ^ 2 * R ^ 2 * σ ^ 2 / ε ^ 3 + 1⌉₊
+    let v := 10*(d:ℝ)^2*L^2*h^2+(d:ℝ)^2*σ^2/h^2
+    let K := max 1 ⌈64 * d * Real.sqrt (L * R ^ 2 / ε) + 512 * L * d ^ 2 * R ^ 2 * σ / ε ^ 2 + 256 * L * d ^ 2 * R ^ 2 * σ ^ 2 / ε ^ 3 + 1⌉₊
     let M := 128*L*d^2+8*(K:ℝ)*v/ε
     acceleratedTwoPoint (K := K) (lt_of_lt_of_le Nat.zero_lt_one (le_max_left _ _))
       (sphereLaw (Point d)) M (8*d) h x0
@@ -328,8 +328,8 @@ lemma two_point_convergence_coordinates :
   let : NeZero d := ⟨ne_of_gt hd⟩
   rcases ho with ⟨g,p,P,hind,hmarg,rfl,hc,hg,hlip,⟨u,hmin,hu⟩,hgm,hgi,hmean,hvi,hv⟩
   let h := Real.sqrt (min (ε/(4*L)) (σ/L+ε/(128*L*d*(Real.sqrt (L*R^2/ε)+1))))
-  let v := ((d:ℝ)^2/4+8*(d:ℝ))*L^2*h^2+(d:ℝ)^2*σ^2/h^2
-  let K := max 1 ⌈32 * d * Real.sqrt (L * R ^ 2 / ε) + 40 * d ^ 2 * L * R ^ 2 * σ / ε ^ 2 + 256 * d * L * R ^ 2 * σ / ε ^ 2 + 128 * L * d ^ 2 * R ^ 2 * σ ^ 2 / ε ^ 3 + 1⌉₊
+  let v := 10*(d:ℝ)^2*L^2*h^2+(d:ℝ)^2*σ^2/h^2
+  let K := max 1 ⌈64 * d * Real.sqrt (L * R ^ 2 / ε) + 512 * L * d ^ 2 * R ^ 2 * σ / ε ^ 2 + 256 * L * d ^ 2 * R ^ 2 * σ ^ 2 / ε ^ 3 + 1⌉₊
   let M := 128*L*d^2+8*(K:ℝ)*v/ε
   have hK : 0 < K := lt_of_lt_of_le Nat.zero_lt_one (le_max_left _ _)
   have ha := twoPoint_accuracy (f := f) (g := g) (p := (p : Measure Ω)) hL hR hσ hε
