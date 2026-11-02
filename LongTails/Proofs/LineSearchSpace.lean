@@ -166,7 +166,7 @@ lemma line_search_expected_space {E : Type} [NormedAddCommGroup E] [InnerProduct
     (hvar : ∀ x, ∫ ω, (g x ω - f x) ^ 2 ∂(p : Measure Ω) ≤ σ ^ 2)
     (hL : 0 < L) (hR : 0 ≤ R) (hσ : 0 ≤ σ) {m J : ℕ} (hm : 0 < m) (hJ : 1 ≤ J)
     (hbound : L / 2 * (2 * R * ((2:ℝ) / 3) ^ (J - 1)) ^ 2
-        + (J : ℝ) * (3 * (2 * (σ / Real.sqrt m))) ≤ ε) :
+        + 3 * (2 * σ * Real.sqrt ((J : ℝ) / m)) ≤ ε) :
     Integrable (fun seed : Unit × (ℕ → Ω) =>
         f (execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
             (ofReal (uOf hd e) (lineSearch R (psiOf hd e x0) (by omega : 0 < 2 * m)))

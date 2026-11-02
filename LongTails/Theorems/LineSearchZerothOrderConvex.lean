@@ -14,11 +14,11 @@ noncomputable def levels (q : LongTails.Setups.ZerothOrderLineConvex.spec.Params
 
 /-- Samples averaged per comparison point of a line search level. -/
 noncomputable def samples (q : LongTails.Setups.ZerothOrderLineConvex.spec.Params) : ℕ :=
-  1 + ⌈(12 * (levels q : ℝ) * q.val.σ / q.val.ε) ^ 2⌉₊
+  1 + ⌈144 * (levels q : ℝ) * q.val.σ ^ 2 / q.val.ε ^ 2⌉₊
 
 noncomputable def budget :
     (let S := LongTails.Setups.ZerothOrderLineConvex.spec; S.Params → Fin S.numOracles → ℕ) :=
-  fun q _ => (1 + ⌈Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4)⌉₊) * (2 * (1 + ⌈(12 * ↑(1 + ⌈Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4)⌉₊) * q.val.σ / q.val.ε) ^ 2⌉₊))
+  fun q _ => (1 + ⌈Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4)⌉₊) * (2 * (1 + ⌈144 * ↑(1 + ⌈Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4)⌉₊) * q.val.σ ^ 2 / q.val.ε ^ 2⌉₊))
 
 theorem result : Convergence LongTails.Setups.ZerothOrderLineConvex.spec budget := by
   classical
@@ -44,10 +44,10 @@ theorem result : Convergence LongTails.Setups.ZerothOrderLineConvex.spec budget 
   have hJ : ((levels q : ℕ) : ℝ) = 1 + ⌈Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε)
       / Real.log (9 / 4)⌉₊ := by simp only [levels, Nat.cast_add, Nat.cast_one]
   have hm : ((samples q : ℕ) : ℝ) =
-      1 + ⌈(12 * (levels q : ℝ) * q.val.σ / q.val.ε) ^ 2⌉₊ := by
+      1 + ⌈144 * (levels q : ℝ) * q.val.σ ^ 2 / q.val.ε ^ 2⌉₊ := by
     simp only [samples, Nat.cast_add, Nat.cast_one]
   have hbound : q.val.L / 2 * (2 * q.val.R * ((2:ℝ) / 3) ^ (levels q - 1)) ^ 2
-        + (levels q : ℝ) * (3 * (2 * (q.val.σ / Real.sqrt (samples q)))) ≤ q.val.ε :=
+        + 3 * (2 * q.val.σ * Real.sqrt ((levels q : ℝ) / samples q)) ≤ q.val.ε :=
     LineSearch.Tuning.tuning_bound hL hR hσ hε (levels q) (samples q) hJ hm
   have htransport : ∀ (OG : Oracle q.val.E ℝ) (A A' : Algorithm q.val.E ℝ q.val.E), A = A' →
         LongTails.Setups.ZerothOrderLineConvex.spec.successful q f

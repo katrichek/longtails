@@ -1,5 +1,6 @@
-import LongTails.Proofs.LineSearchAccuracy
 import LongTails.Proofs.LineSearchExecution
+import LongTails.Proofs.LineSearchMeasurable
+import LongTails.Proofs.LineSearchSharpL2
 import LongTails.Proofs.IIDBlocks
 import LongTails.Proofs.ZerothOrderEstimator
 
@@ -120,7 +121,7 @@ lemma lineSearch_expected {m J : ℕ} (hn : 0 < 2 * m) {p : Measure Ω} [IsProba
     (hsmooth : ∀ x ∈ Icc (x0 - R) (x0 + R), f x - f xstar ≤ L / 2 * (x - xstar) ^ 2)
     (hL : 0 < L) (hR : x0 - R ≤ x0 + R) (hx : xstar ∈ Icc (x0 - R) (x0 + R)) (hJ : 1 ≤ J)
     (hbound : L / 2 * (2 * R * ((2:ℝ) / 3) ^ (J - 1)) ^ 2
-        + (J : ℝ) * (3 * (2 * (σ / Real.sqrt m))) ≤ ε) :
+        + 3 * (2 * σ * Real.sqrt ((J : ℝ) / m)) ≤ ε) :
     Integrable (fun seed : Unit × (ℕ → Ω) =>
         f (execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
             (lineSearch R x0 hn) (fun _ => J * (2 * m)) seed.1 seed.2) - f xstar)
@@ -129,8 +130,8 @@ lemma lineSearch_expected {m J : ℕ} (hn : 0 < 2 * m) {p : Measure Ω} [IsProba
           f (execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
               (lineSearch R x0 hn) (fun _ => J * (2 * m)) seed.1 seed.2) - f xstar
             ∂((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω)))) ≤ ε := by
-  have hacc := expected_gap R x0 m g f xstar L σ ε hfm hg hm hσ hmean hint hsql2 hvar hconv hmin
-    hsmooth hL hR hx hJ hbound
+  have hacc := expected_gap_sqrt R x0 g f xstar L σ ε
+    ⟨hm, hfm, hg, hmean, hint, hsql2, hvar⟩ hσ hconv hmin hsmooth hL hR hx hJ hbound
   rcases hacc with ⟨haccI, haccB⟩
   have hmp := blocks_measurePreserving hind hmarg m
   have hF : (fun β : ℕ → Fin m → Ω => f (champAt R x0 m g β J) - f xstar)
