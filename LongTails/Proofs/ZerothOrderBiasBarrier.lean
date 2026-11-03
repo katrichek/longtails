@@ -350,4 +350,81 @@ theorem exists_central_difference_bias (L ρ h : ℝ) (hL : 0 < L) (hh : 0 < h) 
     have h2 : 0 < L * h / 4 := by positivity
     nlinarith
 
+
+lemma deriv_gapFn_zero (L ρ h : ℝ) (hh : 0 ≤ h) (hρ : h ≤ ρ) :
+    deriv (gapFn L ρ h) 0 = L * (ρ - h) := by
+  rw [deriv_gapFn, profile]
+  have n1 : max (0 + ρ) 0 = 0 + ρ := max_eq_left (by linarith)
+  have n2 : max (0 + h) 0 = 0 + h := max_eq_left (by linarith)
+  have n3 : max (0 : ℝ) 0 = 0 := max_eq_right (le_refl 0)
+  rw [n1, n2, n3]
+  ring
+
+/-- Fourth-order accurate central difference of the same objective keeps a bias of `5 L h / 24`. -/
+lemma barrier_bias4 (L ρ h : ℝ) (hL : 0 < L) (hh : 0 < h) (hρ : 2 * h ≤ ρ) :
+    (8 * (gapFn L ρ h h - gapFn L ρ h (-h)) - (gapFn L ρ h (2 * h) - gapFn L ρ h (-2 * h))) /
+        (12 * h) - deriv (gapFn L ρ h) 0 = 5 * L * h / 24 := by
+  have k1 : max (h + ρ) 0 = h + ρ := max_eq_left (by linarith)
+  have k2 : max (h + h) 0 = h + h := max_eq_left (by linarith)
+  have k3 : max h 0 = h := max_eq_left (by linarith)
+  have k4 : max (-h + ρ) 0 = -h + ρ := max_eq_left (by linarith)
+  have k5 : max (-h + h) 0 = 0 := max_eq_right (by linarith)
+  have k6 : max (-h) 0 = 0 := max_eq_right (by linarith)
+  have k7 : max (2 * h + ρ) 0 = 2 * h + ρ := max_eq_left (by linarith)
+  have k8 : max (2 * h + h) 0 = 2 * h + h := max_eq_left (by linarith)
+  have k9 : max (2 * h) 0 = 2 * h := max_eq_left (by linarith)
+  have k10 : max (-2 * h + ρ) 0 = -2 * h + ρ := max_eq_left (by linarith)
+  have k11 : max (-2 * h + h) 0 = 0 := max_eq_right (by linarith)
+  have k12 : max (-2 * h) 0 = 0 := max_eq_right (by linarith)
+  have he1 : hinge (h + ρ) = (h + ρ) ^ 2 / 2 := by rw [hinge_sq, k1]
+  have he2 : hinge (h + h) = (h + h) ^ 2 / 2 := by rw [hinge_sq, k2]
+  have he3 : hinge h = h ^ 2 / 2 := by rw [hinge_sq, k3]
+  have he4 : hinge (-h + ρ) = (-h + ρ) ^ 2 / 2 := by rw [hinge_sq, k4]
+  have he5 : hinge (-h + h) = 0 := by rw [hinge_sq, k5]; norm_num
+  have he6 : hinge (-h) = 0 := by rw [hinge_sq, k6]; norm_num
+  have he7 : hinge (2 * h + ρ) = (2 * h + ρ) ^ 2 / 2 := by rw [hinge_sq, k7]
+  have he8 : hinge (2 * h + h) = (2 * h + h) ^ 2 / 2 := by rw [hinge_sq, k8]
+  have he9 : hinge (2 * h) = (2 * h) ^ 2 / 2 := by rw [hinge_sq, k9]
+  have he10 : hinge (-2 * h + ρ) = (-2 * h + ρ) ^ 2 / 2 := by rw [hinge_sq, k10]
+  have he11 : hinge (-2 * h + h) = 0 := by rw [hinge_sq, k11]; norm_num
+  have he12 : hinge (-2 * h) = 0 := by rw [hinge_sq, k12]; norm_num
+  rw [deriv_gapFn_zero L ρ h (le_of_lt hh) (by linarith)]
+  simp only [gapFn, he1, he2, he3, he4, he5, he6, he7, he8, he9, he10, he11, he12]
+  have h2 : (2 : ℝ) ≠ 0 := by norm_num
+  have h12 : (12 : ℝ) ≠ 0 := by norm_num
+  have hh' : h ≠ 0 := ne_of_gt hh
+  field_simp [h2, h12, hh']
+  ring
+
+/-- Machine-checked barrier for the fourth-order stencil: even the classical `O(h⁴)`-accurate
+gradient approximation has bias `5 L h / 24` away from the minimizer on a convex `L`-smooth
+objective. -/
+theorem exists_four_point_difference_bias (L h : ℝ) (hL : 0 < L) (hh : 0 < h) :
+    ∃ (f : ℝ → ℝ) (x xstar : ℝ),
+      ConvexOn ℝ Set.univ f ∧
+        (∀ u v, |deriv f u - deriv f v| ≤ L * |u - v|) ∧
+        IsMinOn f Set.univ xstar ∧
+        x - xstar = 2 * h ∧
+        (8 * (f (x + h) - f (x - h)) - (f (x + 2 * h) - f (x - 2 * h))) / (12 * h)
+            - deriv f x = 5 * L * h / 24 ∧
+        ((8 * (f (x + h) - f (x - h)) - (f (x + 2 * h) - f (x - 2 * h))) / (12 * h)
+            - deriv f x) * (x - xstar) > 0 := by
+  have hle : h ≤ 2 * h := by linarith
+  refine ⟨gapFn L (2 * h) h, 0, -(2 * h),
+    gapFn_convex L (2 * h) h (le_of_lt hL) (le_of_lt hh) hle,
+    gapFn_deriv_lipschitz L (2 * h) h (le_of_lt hL) (le_of_lt hh) hle,
+    gapFn_min L (2 * h) h (le_of_lt hL) (le_of_lt hh) hle, ?_, ?_, ?_⟩
+  · ring
+  · simpa using barrier_bias4 L (2 * h) h hL hh (by linarith)
+  · have hb : (8 * (gapFn L (2 * h) h (0 + h) - gapFn L (2 * h) h (0 - h)) -
+        (gapFn L (2 * h) h (0 + 2 * h) - gapFn L (2 * h) h (0 - 2 * h))) / (12 * h)
+      - deriv (gapFn L (2 * h) h) 0 = 5 * L * h / 24 := by
+      simpa using barrier_bias4 L (2 * h) h hL hh (by linarith)
+    rw [hb]
+    have h1 : (0 : ℝ) - -(2 * h) = 2 * h := by ring
+    rw [h1]
+    have h2 : 0 < 2 * h := by linarith
+    have h3 : 0 < 5 * L * h / 24 := by positivity
+    nlinarith
+
 end LongTails.Proofs.ZerothOrderBiasBarrier
