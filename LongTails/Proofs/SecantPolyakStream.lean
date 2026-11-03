@@ -1,6 +1,7 @@
 import LongTails.Proofs.SecantPolyakAccuracy
 import LongTails.Proofs.ZerothOrderExecution
 import LongTails.Proofs.SgdExecution
+import LongTails.Proofs.ClippedExtragradientIteration
 import LongTails.Proofs.BatchedExecution
 import LongTails.Algorithms.SecantDescent
 
@@ -116,8 +117,10 @@ lemma secant_accuracy_slot {d m K : ℕ} {g : Point d → Ω → ℝ} {f : Point
     (hlip : ∀ x y, ‖gradient f x - gradient f y‖ ≤ L * ‖x - y‖)
     (hm : 0 < m) (hmin : IsMinOn f Set.univ xstar)
     (hpl : ∀ x, 2 * μ * (f x - f xstar) ≤ ‖gradient f x‖ ^ 2) :
-    (∫ ξ : Fin K → secantSpace d m → Ω,
-        f (runSlot L g h x0 ξ) - f xstar ∂Measure.pi fun _ : Fin K => slotLaw d m p) ≤
+    Integrable (fun ξ : Fin K → secantSpace d m → Ω => f (runSlot L g h x0 ξ) - f xstar)
+        (Measure.pi fun _ : Fin K => slotLaw d m p) ∧
+      (∫ ξ : Fin K → secantSpace d m → Ω,
+          f (runSlot L g h x0 ξ) - f xstar ∂Measure.pi fun _ : Fin K => slotLaw d m p) ≤
         (1 - μ / L) ^ K * (f x0 - f xstar) +
           (K : ℝ) * ((1 / L) * batchError d m σ L h) := by
   classical
@@ -145,7 +148,7 @@ lemma secant_accuracy_slot {d m K : ℕ} {g : Point d → Ω → ℝ} {f : Point
           (by have : 0 ≤ μ / L := div_nonneg (le_of_lt hμ) (le_of_lt hL); linarith)
           (Nat.zero_le j)) (by simp)
       _ = (K : ℝ) := by simp
-  refine le_trans hkey.2 ?_
+  refine ⟨hkey.1, le_trans hkey.2 ?_⟩
   have hK : 0 ≤ (1 / L) * batchError d m σ L h := by
     simp only [batchError]
     positivity
@@ -331,6 +334,97 @@ lemma execute_secant {d m K : ℕ} (hd : 0 < d) (hm : 0 < m) (L h : ℝ) (x0 : P
               + (Fintype.equivFin (secantSpace d m) t).val) (Nat.zero_add k.val)))
     exact hstep2.trans h3
   exact hb.trans h2
+
+
+/-- The slot run is measurable in the block samples. -/
+lemma measurable_runSlot {d m K : ℕ} {g : Point d → Ω → ℝ}
+    (hg : Measurable (Function.uncurry g)) (L h : ℝ) (x0 : Point d) :
+    Measurable (fun xi : Fin K → secantSpace d m → Ω => runSlot (K := K) L g h x0 xi) := by
+  classical
+  exact (ClippedExtragradient.measurable_iterateSamples (measurable_stepSlot_joint hg h) K).comp
+    (measurable_const.prodMk measurable_id)
+
+/-- Step blocks cut out of the stream are measurable. -/
+lemma measurable_blockOf {d m K : ℕ} :
+    Measurable (fun xi : ℕ → Ω => blockOf (d := d) (m := m) (K := K) xi) := by
+  classical
+    show Measurable (fun xi : ℕ → Ω =>
+        fun k : Fin K => fun t : secantSpace d m =>
+          xi (k.val * Fintype.card (secantSpace d m)
+            + (Fintype.equivFin (secantSpace d m) t).val))
+    fun_prop
+
+/-- Accuracy of the executed secant algorithm on the template product space. -/
+lemma executed_accuracy {d m K : ℕ} (hd : 0 < d) (hm : 0 < m) {g : Point d → Ω → ℝ}
+    {f : Point d → ℝ} {σ L μ h : ℝ} {x0 xstar : Point d}
+    (hh : 0 < h) (hL : 0 < L) (hμ : 0 < μ) (hμL : μ ≤ L)
+    (hg : Measurable (Function.uncurry g))
+    (hgi : ∀ x, Integrable (g x) p)
+    (hmean : ∀ x, (∫ ω, g x ω ∂p) = f x)
+    (hvi : ∀ x, Integrable (fun ω => (g x ω - f x) ^ 2) p)
+    (hv : ∀ x, (∫ ω, (g x ω - f x) ^ 2 ∂p) ≤ σ ^ 2)
+    (hc : ConvexOn ℝ Set.univ f)
+    (hgr : ∀ x, HasGradientAt f (gradient f x) x)
+    (hlip : ∀ x y, ‖gradient f x - gradient f y‖ ≤ L * ‖x - y‖)
+    (hmin : IsMinOn f Set.univ xstar)
+    (hpl : ∀ x, 2 * μ * (f x - f xstar) ≤ ‖gradient f x‖ ^ 2)
+    (P : ProbabilityMeasure (ℕ → Ω))
+    (hind : iIndepFun (fun k (xi : ℕ → Ω) => xi k) (P : Measure _))
+    (hmarg : ∀ k, (P : Measure _).map (fun xi : ℕ → Ω => xi k) = (p : Measure _)) :
+    let result := fun seed : Unit × (ℕ → Ω) =>
+      execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
+        (secantDescent hd hm L h x0) (fun _ => K * (2 * d * m)) seed.1 seed.2
+    Measurable result ∧
+      Integrable (fun seed => f (result seed) - f xstar)
+        ((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω))) ∧
+      (∫ seed, f (result seed) - f xstar
+          ∂((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω)))) ≤
+        (1 - μ / L) ^ K * (f x0 - f xstar) + (K : ℝ) * ((1 / L) * batchError d m σ L h) := by
+  classical
+  intro result
+  have hbc : (fun _ : Fin 1 => K * Fintype.card (secantSpace d m))
+      = (fun _ : Fin 1 => K * (2 * d * m)) := by
+    classical
+    funext i
+    rw [card_secantSpace]
+  have hres : result = fun seed : Unit × (ℕ → Ω) =>
+      runSlot (K := K) L g h x0 (blockOf (d := d) (m := m) (K := K) seed.2) := by
+    refine funext fun seed => ?_
+    cases seed with
+    | mk u xi =>
+      cases u
+      show execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
+          (secantDescent hd hm L h x0) (fun _ => K * (2 * d * m)) () xi =
+          runSlot (K := K) L g h x0 (blockOf (d := d) (m := m) (K := K) xi)
+      rw [← hbc]
+      exact execute_secant hd hm L h x0 g P xi
+  have hmeas : Measurable result := by
+    rw [hres]
+    exact (measurable_runSlot hg L h x0).comp (measurable_blockOf.comp measurable_snd)
+  have ha := secant_accuracy_slot (d := d) (m := m) (K := K) (g := g) (f := f) (σ := σ) (L := L)
+    (μ := μ) (x0 := x0) (xstar := xstar) (h := h) (hh := hh) (hL := hL) (hμ := hμ) (hμL := hμL) (hg := hg) (hgi := hgi)
+    (hmean := hmean) (hvi := hvi) (hv := hv) (hc := hc) (hgr := hgr) (hlip := hlip) (hm := hm)
+    (hmin := hmin) (hpl := hpl)
+  have hmp : MeasurePreserving (fun seed : Unit × (ℕ → Ω) =>
+      blockOf (d := d) (m := m) (K := K) seed.2)
+      ((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω)))
+      (Measure.pi fun _ : Fin K => slotLaw d m p) := by
+    have h1 : MeasurePreserving Prod.snd
+        ((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω)))
+        (P : Measure (ℕ → Ω)) := measurePreserving_snd
+    exact (secant_stream_law (d := d) (m := m) (K := K) P hind hmarg).comp h1
+  refine ⟨hmeas, ?_, ?_⟩
+  · rw [hres]
+    exact hmp.integrable_comp_of_integrable ha.1
+  · rw [hres]
+    calc (∫ seed : Unit × (ℕ → Ω),
+            f (runSlot (K := K) L g h x0 (blockOf (d := d) (m := m) (K := K) seed.2)) - f xstar
+            ∂((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω))))
+        = ∫ xi : Fin K → secantSpace d m → Ω,
+            f (runSlot (K := K) L g h x0 xi) - f xstar
+            ∂(Measure.pi fun _ : Fin K => slotLaw d m p) :=
+          integral_comp_preserving hmp ha.1
+      _ ≤ (1 - μ / L) ^ K * (f x0 - f xstar) + (K : ℝ) * ((1 / L) * batchError d m σ L h) := ha.2
 
 
 end OracleTemplate.SecantPolyak

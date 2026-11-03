@@ -36,6 +36,15 @@ noncomputable def secantDecode (h : ℝ) (_s : ℕ × Point d)
 lemma secant_nonempty (hd : 0 < d) (hm : 0 < m) : Nonempty (secantSpace d m) :=
   ⟨(⟨0, hm⟩, (⟨0, hd⟩, false))⟩
 
+lemma card_secantSpace (d m : ℕ) : Fintype.card (secantSpace d m) = 2 * d * m := by
+  classical
+  calc Fintype.card (secantSpace d m) = Fintype.card (Fin m × (Fin d × Bool)) := rfl
+    _ = Fintype.card (Fin m) * Fintype.card (Fin d × Bool) := Fintype.card_prod _ _
+    _ = Fintype.card (Fin m) * (Fintype.card (Fin d) * Fintype.card Bool) := by
+          rw [Fintype.card_prod]
+    _ = m * (d * 2) := by rw [Fintype.card_fin, Fintype.card_fin, Fintype.card_bool]
+    _ = 2 * d * m := by simp [Nat.mul_comm, Nat.mul_left_comm]
+
 lemma secant_card_pos (hd : 0 < d) (hm : 0 < m) : 0 < Fintype.card (secantSpace d m) := by
   classical
   rw [Fintype.card_pos_iff]
