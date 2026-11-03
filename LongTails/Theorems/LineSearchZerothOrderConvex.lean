@@ -107,4 +107,43 @@ theorem result : Convergence LongTails.Setups.ZerothOrderLineConvex.spec budget 
   · exact hres.1
   · exact hres.2
 
+lemma budget_le (q : LongTails.Setups.ZerothOrderLineConvex.spec.Params) (i : Fin 1)
+    (_hL : 0 < q.val.L) (_hR : 0 ≤ q.val.R) (_hσ : 0 ≤ q.val.σ) (hε : 0 < q.val.ε)
+    (hz : 1 ≤ 4 * q.val.L * q.val.R ^ 2 / q.val.ε) :
+    (budget q i : ℝ) ≤
+      2 * (2 + Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4))
+        * (2 + 144 * (2 + Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4))
+            * q.val.σ ^ 2 / q.val.ε ^ 2) := by
+  set a : ℝ := Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4) with hadef
+  have h94 : 0 < Real.log (9 / 4) := Real.log_pos (by norm_num)
+  have hlog : 0 ≤ Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) := Real.log_nonneg hz
+  have ha : 0 ≤ a := by
+    rw [hadef]
+    exact div_nonneg hlog (le_of_lt h94)
+  have hJ : (levels q : ℝ) ≤ 2 + a := by
+    have hc : (⌈a⌉₊ : ℝ) ≤ a + 1 := (Nat.ceil_lt_add_one ha).le
+    have heq : (levels q : ℝ) = 1 + ⌈a⌉₊ := by
+      simp only [levels, hadef, Nat.cast_add, Nat.cast_one]
+    linarith
+  have hn : 0 ≤ 144 * (levels q : ℝ) * q.val.σ ^ 2 / q.val.ε ^ 2 := by positivity
+  have hm : (samples q : ℝ) ≤ 2 + 144 * (2 + a) * q.val.σ ^ 2 / q.val.ε ^ 2 := by
+    have hc : (⌈144 * (levels q : ℝ) * q.val.σ ^ 2 / q.val.ε ^ 2⌉₊ : ℝ) ≤
+        144 * (levels q : ℝ) * q.val.σ ^ 2 / q.val.ε ^ 2 + 1 := (Nat.ceil_lt_add_one hn).le
+    have hmono : (⌈144 * (levels q : ℝ) * q.val.σ ^ 2 / q.val.ε ^ 2⌉₊ : ℝ) ≤
+        144 * (2 + a) * q.val.σ ^ 2 / q.val.ε ^ 2 + 1 :=
+      le_trans hc (by gcongr)
+    have heq : (samples q : ℝ) = 1 + ⌈144 * (levels q : ℝ) * q.val.σ ^ 2 / q.val.ε ^ 2⌉₊ := by
+      simp only [samples, Nat.cast_add, Nat.cast_one]
+    linarith
+  calc (budget q i : ℝ) = (levels q : ℝ) * (2 * (samples q : ℝ)) := by
+        simp only [budget, levels, samples, Nat.cast_add, Nat.cast_one, Nat.cast_mul,
+          Nat.cast_two]
+    _ ≤ (2 + a) * (2 * (2 + 144 * (2 + a) * q.val.σ ^ 2 / q.val.ε ^ 2)) := by
+        gcongr
+      _ = 2 * (2 + a) * (2 + 144 * (2 + a) * q.val.σ ^ 2 / q.val.ε ^ 2) := by ring
+    _ = 2 * (2 + Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4))
+          * (2 + 144 * (2 + Real.log (4 * q.val.L * q.val.R ^ 2 / q.val.ε) / Real.log (9 / 4))
+              * q.val.σ ^ 2 / q.val.ε ^ 2) := by
+        rw [hadef]
+
 end LongTails.Theorems.LineSearchZerothOrderConvex
