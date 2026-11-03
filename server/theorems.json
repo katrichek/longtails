@@ -3399,5 +3399,26 @@
     "setup": "LongTails.Setups.ZerothOrderSmoothAndConvex",
     "statement": "OracleTemplate.Convergence LongTails.Setups.ZerothOrderSmoothAndConvex.spec\n  OracleTemplate.ZerothOrder.AcceleratedZerothOrderConvex.budget",
     "theorem": "OracleTemplate.ZerothOrder.AcceleratedZerothOrderConvex.result"
+  },
+  {
+    "budget": {
+      "latex": "\\left\\lceil \\frac{\\left(1 + \\log\\left(1 + \\frac{2 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)\\right) \\cdot L}{\\min\\left\\{ \\mu, L \\right\\}} \\right\\rceil_{+} \\cdot \\left(2 \\cdot d \\cdot \\left(1 + \\left\\lceil \\frac{\\frac{128 \\cdot d^{2} \\cdot L^{2} \\cdot \\sigma^{2}}{\\left(\\min\\left\\{ \\mu, L \\right\\}\\right)^{2}}}{\\varepsilon^{2}} \\right\\rceil_{+}\\right)\\right)",
+      "oracle": 0,
+      "type": "LongTails.Setups.ZerothOrderStronglyConvex.spec.Params → ℕ",
+      "value": "fun q =>\n  ⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L⌉₊ *\n    (2 * q.d * (1 + ⌈128 * ↑q.d ^ 2 * q.L ^ 2 * q.σ ^ 2 / min q.μ q.L ^ 2 / q.ε ^ 2⌉₊))"
+    },
+    "budgets": [
+      {
+        "latex": "\\left\\lceil \\frac{\\left(1 + \\log\\left(1 + \\frac{2 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)\\right) \\cdot L}{\\min\\left\\{ \\mu, L \\right\\}} \\right\\rceil_{+} \\cdot \\left(2 \\cdot d \\cdot \\left(1 + \\left\\lceil \\frac{\\frac{128 \\cdot d^{2} \\cdot L^{2} \\cdot \\sigma^{2}}{\\left(\\min\\left\\{ \\mu, L \\right\\}\\right)^{2}}}{\\varepsilon^{2}} \\right\\rceil_{+}\\right)\\right)",
+        "oracle": 0,
+        "type": "LongTails.Setups.ZerothOrderStronglyConvex.spec.Params → ℕ",
+        "value": "fun q =>\n  ⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L⌉₊ *\n    (2 * q.d * (1 + ⌈128 * ↑q.d ^ 2 * q.L ^ 2 * q.σ ^ 2 / min q.μ q.L ^ 2 / q.ε ^ 2⌉₊))"
+      }
+    ],
+    "module": "LongTails.Theorems.ZerothOrderStronglyConvex",
+    "namespace": "LongTails.Setups.ZerothOrderStronglyConvex",
+    "setup": "LongTails.Setups.ZerothOrderStronglyConvex",
+    "statement": "OracleTemplate.Convergence LongTails.Setups.ZerothOrderStronglyConvex.spec\n  LongTails.Theorems.ZerothOrderStronglyConvex.budget",
+    "theorem": "LongTails.Theorems.ZerothOrderStronglyConvex.result"
   }
 ]

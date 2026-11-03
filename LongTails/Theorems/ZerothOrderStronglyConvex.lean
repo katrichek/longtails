@@ -1,0 +1,167 @@
+import LongTails.Setups.ZerothOrderStronglyConvex
+import LongTails.Proofs.SecantPolyakSpace
+
+namespace LongTails.Theorems.ZerothOrderStronglyConvex
+
+open OracleTemplate MeasureTheory ProbabilityTheory
+open LongTails.Setups
+open LongTails.Setups.ZerothOrderSmoothAndConvex
+open scoped BigOperators
+
+/-- Logarithmic contraction factor of batched secant descent. -/
+noncomputable def contraction (q : LongTails.Setups.ZerothOrderStronglyConvex.Params) : ℝ :=
+  1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)
+
+/-- Gradient steps of batched secant descent. -/
+noncomputable def steps (q : LongTails.Setups.ZerothOrderStronglyConvex.Params) : ℕ :=
+  ⌈contraction q * q.L / min q.μ q.L⌉₊
+
+/-- Independent replicas averaged inside one secant step. -/
+noncomputable def replicas (q : LongTails.Setups.ZerothOrderStronglyConvex.Params) : ℕ :=
+  1 + ⌈128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2⌉₊
+
+/-- Sampling radius of one two-sided coordinate difference. -/
+noncomputable def bandwidth (q : LongTails.Setups.ZerothOrderStronglyConvex.Params) : ℝ :=
+  Real.sqrt (min q.μ q.L * q.ε / (4 * (q.d : ℝ) * q.L ^ 2))
+
+noncomputable def budget :
+    (let S := LongTails.Setups.ZerothOrderStronglyConvex.spec; S.Params → Fin S.numOracles → ℕ) :=
+  fun q _ => ⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L⌉₊
+    * (2 * q.d * (1 + ⌈128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2⌉₊))
+
+/-- The proved budget is logarithmic in `1/ε` times `ε⁻²`. -/
+lemma budget_le (q : LongTails.Setups.ZerothOrderStronglyConvex.Params) (i : Fin 1)
+    (hL : 0 < q.L) (_hR : 0 ≤ q.R) (_hσ : 0 ≤ q.σ) (hμ : 0 < q.μ) (hε : 0 < q.ε) :
+    (budget q i : ℝ) ≤ 2 * (q.d : ℝ)
+      * (1 + (1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L)
+      * (2 + 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2) := by
+  have hp : 0 < min q.μ q.L := lt_min_iff.mpr ⟨hμ, hL⟩
+  have hz : 0 ≤ 2 * q.L * q.R ^ 2 / q.ε := by positivity
+  have hlog : 0 ≤ Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε) :=
+    Real.log_nonneg (by linarith)
+  set a : ℝ := (1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L with hadef
+  set X : ℝ := 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2 with hXdef
+  have ha : 0 ≤ a := by
+    rw [hadef]
+    positivity
+  have hX : 0 ≤ X := by
+    rw [hXdef]
+    positivity
+  have hK : (⌈a⌉₊ : ℝ) ≤ a + 1 := (Nat.ceil_lt_add_one ha).le
+  have hM : (1 + ⌈X⌉₊ : ℝ) ≤ 2 + X := by
+    have := Nat.ceil_lt_add_one hX
+    linarith
+  calc (budget q i : ℝ)
+      = ⌈a⌉₊ * (2 * (q.d : ℝ) * (1 + ⌈X⌉₊)) := by
+        simp only [budget, a, X]
+        norm_cast
+    _ ≤ (a + 1) * (2 * (q.d : ℝ) * (2 + X)) := by
+        gcongr
+      _ = 2 * (q.d : ℝ) * (1 + a) * (2 + X) := by ring
+    _ = 2 * (q.d : ℝ)
+          * (1 + (1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L)
+          * (2 + 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2) := by
+        rw [hadef, hXdef]
+
+theorem result : Convergence LongTails.Setups.ZerothOrderStronglyConvex.spec budget := by
+  classical
+  refine ⟨fun q =>
+      if h : Nonempty (q.E ≃ₗᵢ[ℝ] Point q.d) then
+        if hd : 0 < q.d then
+          SecantPolyak.ofPoint h.some.symm (SecantDescent.secantDescent (m := replicas q) hd
+            (by simp only [replicas]; omega) q.L (bandwidth q) (h.some q.x0))
+        else
+          { State := q.E, initial := fun _ => q.x0, query := fun x => (0, x),
+            update := fun x _ => x, output := id }
+      else
+        { State := q.E, initial := fun _ => q.x0, query := fun x => (0, x),
+          update := fun x _ => x, output := id },
+    ?_, fun _ _ => trivial⟩
+  intro q hq f O ho
+  rcases hq with ⟨hd, hL, hR, hσ, hμ, hε⟩
+  obtain ⟨hbase, xstar, hmin, hdist, hsc⟩ := ho
+  obtain ⟨he, g, p, P, hind, hmarg, hO, hconv, hgr, hlip, _, hgm, hgi, hmean, hgsq, hvar⟩ := hbase
+  subst hO
+  set e : q.E ≃ₗᵢ[ℝ] Point q.d := he.some
+  set mu : ℝ := min q.μ q.L
+  have hmu : 0 < mu := lt_min_iff.mpr ⟨hμ, hL⟩
+  have hmuL : mu ≤ q.L := min_le_right _ _
+  have hpl : ∀ x, 2 * q.μ * (f x - f xstar) ≤ ‖gradient f x‖ ^ 2 :=
+    ZerothOrderStronglyConvex.polyak_of_strong hμ xstar hmin hsc
+  have hplmu : ∀ x, 2 * mu * (f x - f xstar) ≤ ‖gradient f x‖ ^ 2 := by
+    intro x
+    have h1 : 0 ≤ f x - f xstar := sub_nonneg.mpr (hmin (Set.mem_univ x))
+    have h2 : (2 : ℝ) * mu ≤ 2 * q.μ :=
+      mul_le_mul_of_nonneg_left (min_le_left _ _) (by norm_num)
+    refine le_trans (mul_le_mul_of_nonneg_right h2 h1) (hpl x)
+  have hlog : (0 : ℝ) ≤ Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε) := by
+    refine Real.log_nonneg ?_
+    have hz : 0 ≤ 2 * q.L * q.R ^ 2 / q.ε := by positivity
+    linarith
+  have hge1 : (1 : ℝ) ≤ contraction q := le_add_of_nonneg_right hlog
+  have hK0 : 0 < steps q :=
+    Nat.ceil_pos.mpr (div_pos (mul_pos (by linarith) hL) hmu)
+  have hm0 : 0 < replicas q := by simp only [replicas]; omega
+  have hLambda : (steps q : ℝ) * (mu / q.L) ≥ contraction q := by
+    have hc : (contraction q * q.L / mu) * (mu / q.L) = contraction q := by field_simp
+    rw [← hc]
+    exact mul_le_mul_of_nonneg_right (Nat.le_ceil _) (by positivity)
+  have hp0 : 0 < min q.μ q.L := lt_min_iff.mpr ⟨hμ, hL⟩
+  have hp1 : 0 < (min q.μ q.L) ^ 2 * q.ε ^ 2 :=
+    mul_pos (pow_pos hp0 2) (pow_pos hε 2)
+  have hnoise : (replicas q : ℝ) * (mu ^ 2 * q.ε ^ 2) ≥
+      128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 := by
+    show (replicas q : ℝ) * ((min q.μ q.L) ^ 2 * q.ε ^ 2) ≥
+      128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2
+    have hc : (replicas q : ℝ) =
+        1 + ⌈128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2⌉₊ := by
+      simp only [replicas, Nat.cast_add, Nat.cast_one]
+    have h1 : (128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2 : ℝ) ≤
+        (replicas q : ℝ) := by
+      rw [hc]
+      exact le_trans (Nat.le_ceil _) (by linarith)
+    calc 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2
+        = 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2
+            * ((min q.μ q.L) ^ 2 * q.ε ^ 2) := by field_simp
+      _ ≤ (replicas q : ℝ) * ((min q.μ q.L) ^ 2 * q.ε ^ 2) :=
+          mul_le_mul_of_nonneg_right h1 (by positivity)
+  have hbound : (1 - mu / q.L) ^ (steps q) * (q.L / 2 * q.R ^ 2)
+      + (1 / mu) * SecantPolyak.batchError q.d (replicas q) q.σ q.L (bandwidth q) ≤ q.ε :=
+    SecantPolyak.Tuning.tuning_bound hL hR hσ hmu hmuL hε hd hm0
+      (by simpa [contraction] using hLambda) rfl hnoise
+  have hmain := SecantPolyak.space_accuracy (E := q.E) (d := q.d) (hd := hd) (e := e) (f := f)
+    (L := q.L) (R := q.R) (σ := q.σ) (μ := mu) (ε := q.ε) (x0 := q.x0) (xstar := xstar)
+    (Ω := q.Ω) (g := g) (K := steps q) (m := replicas q) hconv hgr hlip hL hR hσ hmu hmuL hε hmin
+    hdist
+    hplmu hgm hind hmarg hgi hmean hgsq hvar hK0 hm0 hbound
+  dsimp only
+  have hEq : (if h : Nonempty (q.E ≃ₗᵢ[ℝ] Point q.d) then
+        if hd' : 0 < q.d then
+          SecantPolyak.ofPoint h.some.symm (SecantDescent.secantDescent (m := replicas q) hd'
+            (by simp only [replicas]; omega) q.L (bandwidth q) (h.some q.x0))
+        else
+          { State := q.E, initial := fun _ => q.x0, query := fun x => (0, x),
+            update := fun x _ => x, output := id }
+      else
+        { State := q.E, initial := fun _ => q.x0, query := fun x => (0, x),
+          update := fun x _ => x, output := id })
+      = SecantPolyak.ofPoint e.symm
+        (SecantDescent.secantDescent (m := replicas q) hd hm0 q.L (bandwidth q) (e q.x0)) := by
+    rw [dite_eq_left he, dite_eq_left hd]
+  have htransport : ∀ (A A' : Algorithm q.E ℝ q.E), A = A' →
+      LongTails.Setups.ZerothOrderStronglyConvex.spec.successful q f
+        (fun seed : A.Seed × ((k : ℕ) → q.Ω) =>
+          execute { Seed := fun _ => q.Ω, law := P, answer := fun _ (_, x) ω => g x ω } A
+            (budget q) seed.1 seed.2)
+        ⟨(A.law : Measure _).prod (P : Measure _), inferInstance⟩ →
+      LongTails.Setups.ZerothOrderStronglyConvex.spec.successful q f
+        (fun seed : A'.Seed × ((k : ℕ) → q.Ω) =>
+          execute { Seed := fun _ => q.Ω, law := P, answer := fun _ (_, x) ω => g x ω } A'
+            (budget q) seed.1 seed.2)
+        ⟨(A'.law : Measure _).prod (P : Measure _), inferInstance⟩ := by
+    intro A A' hAA h
+    cases hAA
+    exact h
+  exact htransport _ _ hEq.symm ⟨hmain.1, xstar, hmin, hmain.2.1, hmain.2.2⟩
+
+end LongTails.Theorems.ZerothOrderStronglyConvex
