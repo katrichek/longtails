@@ -21,19 +21,25 @@ noncomputable def secantIndex {m : ℕ}
     (t : Fin (Fintype.card (secantSpace d m))) : secantSpace d m :=
   (Fintype.equivFin (secantSpace d m)).symm t
 
-noncomputable def centralDifference (h : ℝ) (x : Point d) (f : Point d → ℝ) : Point d :=
-  ∑ i : Fin d, ((f (x + h • direction i) - f (x - h • direction i)) / (2 * h)) • direction i
+
+noncomputable def secantSign {m : ℕ}
+    (t : Fin (Fintype.card (secantSpace d m))) : Bool := (secantIndex t).2
+
+noncomputable def secantCoord {m : ℕ}
+    (t : Fin (Fintype.card (secantSpace d m))) : Fin d := (secantIndex t).1.1
+
+noncomputable def secantPoint (h : ℝ) (x : Point d)
+    (t : Fin (Fintype.card (secantSpace d m))) : Point d :=
+  if secantSign t then x + h • direction (secantCoord t) else x
 
 noncomputable def secantQuery (h : ℝ) (s : ℕ × Point d)
     (t : Fin (Fintype.card (secantSpace d m))) : Point d :=
-  let j := secantIndex t
-  if j.2 then s.2 + h • direction j.1.1 else s.2 - h • direction j.1.1
+  secantPoint h s.2 t
 
 noncomputable def secantDecode (h : ℝ) (_s : ℕ × Point d)
     (replies : Fin (Fintype.card (secantSpace d m)) → ℝ) : Point d :=
-  (1 / (m : ℝ)) • ∑ j : secantSpace d m,
-    ((if j.2 then replies (Fintype.equivFin _ j) else -replies (Fintype.equivFin _ j)) / (2 * h)) •
-      direction j.1.1
+  (1 / (m : ℝ)) • ∑ t, ((if secantSign t then replies t else -replies t) / h) •
+    direction (secantCoord t)
 
 lemma secant_nonempty (hd : 0 < d) (hm : 0 < m) : Nonempty (secantSpace d m) :=
   ⟨((⟨0, hd⟩ : Fin d), ⟨0, hm⟩), false⟩
@@ -49,9 +55,17 @@ noncomputable def secantDescent (hd : 0 < d) (hm : 0 < m) (L h : ℝ) (x0 : Poin
 
 lemma secantQuery_apply (h : ℝ) (x : Point d)
     (t : Fin (Fintype.card (secantSpace d m))) :
-    secantQuery h (k, x) t =
-      if (secantIndex t).2 then x + h • direction (secantIndex t).1.1
-      else x - h • direction (secantIndex t).1.1 := by
+    secantQuery h (k, x) t = secantPoint h x t := by
   simp [secantQuery]
+
+lemma secantIndex_apply
+    (a : secantSpace d m) :
+    secantIndex (Fintype.equivFin (secantSpace d m) a) = a :=
+  Equiv.symm_apply_apply _ _
+
+lemma secantIndex_apply'
+    (t : Fin (Fintype.card (secantSpace d m))) :
+    Fintype.equivFin (secantSpace d m) (secantIndex t) = t :=
+  Equiv.apply_symm_apply _ _
 
 end OracleTemplate.SecantDescent
