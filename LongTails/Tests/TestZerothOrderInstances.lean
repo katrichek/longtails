@@ -229,6 +229,19 @@ theorem lineConclusionInhabited :
   have h := hacc qLine validLine (normSq 1) (oracleOf 1) admLine
   exact ⟨qLine, normSq 1, oracleOf 1, _, _, _, _, ⟨validLine, admLine, h⟩⟩
 
+theorem strongClassIsConvex :
+    ∃ (q : LongTails.Setups.ZerothOrderStronglyConvex.Params) (f : q.E → ℝ) (O : Oracle q.E ℝ),
+      LongTails.Setups.ZerothOrderStronglyConvex.spec.valid q ∧
+        LongTails.Setups.ZerothOrderStronglyConvex.spec.admissible q f O ∧
+        ConvexOn ℝ Set.univ f :=
+  ⟨qTwo, normSq 2, oracleOf 2, validTwo, admTwo, normSqConvex 2⟩
+
+theorem admissibleIsConvex {q : LongTails.Setups.ZerothOrderStronglyConvex.Params}
+    {f : q.E → ℝ} {O : Oracle q.E ℝ}
+    (h : LongTails.Setups.ZerothOrderStronglyConvex.spec.admissible q f O) :
+      ConvexOn ℝ Set.univ f :=
+  LongTails.Setups.ZerothOrderStronglyConvex.admissibleConvex h
+
 theorem strongSetupNonvacuous :
     ∃ (q : LongTails.Setups.ZerothOrderStronglyConvex.Params) (f : q.E → ℝ)
       (O : Oracle q.E ℝ),

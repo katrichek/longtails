@@ -32,6 +32,12 @@ abbrev spec : Setup where
         Integrable (fun ω => f (output ω) - f xstar) (P : Measure _) ∧
         (∫ ω, f (output ω) - f xstar ∂(P : Measure _)) ≤ q.ε
 
+/-- Every admissible objective of the strongly convex setup is a convex objective. -/
+lemma admissibleConvex {q : Params} {f : q.E → ℝ} {O : Oracle q.E ℝ}
+    (h : spec.admissible q f O) : ConvexOn ℝ Set.univ f := by
+  obtain ⟨_, _, _, _, _, _, _, hconv, _, _, _, _, _, _, _⟩ := h.1
+  exact hconv
+
 /-- Strong convexity with modulus `μ` gives the Polyak-Łojasiewicz inequality with the same `μ`. -/
 lemma polyak_of_strong {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [CompleteSpace E] {f : E → ℝ} {μ : ℝ} (hμ : 0 < μ) (xstar : E)
