@@ -18,17 +18,16 @@ noncomputable def steps (q : LongTails.Setups.ZerothOrderPolyakConvex.Params) : 
 
 /-- Independent replicas averaged inside one secant step. -/
 noncomputable def replicas (q : LongTails.Setups.ZerothOrderPolyakConvex.Params) : ℕ :=
-  1 + ⌈(8 * (steps q : ℝ) * (q.d : ℝ) * q.σ / q.ε) ^ 2⌉₊
+  1 + ⌈128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2⌉₊
 
 /-- Sampling radius of one two-sided coordinate difference. -/
 noncomputable def bandwidth (q : LongTails.Setups.ZerothOrderPolyakConvex.Params) : ℝ :=
-  Real.sqrt (q.ε / (2 * (steps q : ℝ) * (q.d : ℝ) * q.L))
+  Real.sqrt (min q.μ q.L * q.ε / (4 * (q.d : ℝ) * q.L ^ 2))
 
 noncomputable def budget :
     (let S := LongTails.Setups.ZerothOrderPolyakConvex.spec; S.Params → Fin S.numOracles → ℕ) :=
   fun q _ => ⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L⌉₊
-    * (2 * q.d * (1 + ⌈(8 * ↑⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L /
-      min q.μ q.L⌉₊ * (q.d : ℝ) * q.σ / q.ε) ^ 2⌉₊))
+    * (2 * q.d * (1 + ⌈128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2⌉₊))
 
 theorem result : Convergence LongTails.Setups.ZerothOrderPolyakConvex.spec budget := by
   classical
@@ -71,23 +70,28 @@ theorem result : Convergence LongTails.Setups.ZerothOrderPolyakConvex.spec budge
     have hc : (contraction q * q.L / mu) * (mu / q.L) = contraction q := by field_simp
     rw [← hc]
     exact mul_le_mul_of_nonneg_right (Nat.le_ceil _) (by positivity)
-  have hnoise : (replicas q : ℝ) * q.ε ^ 2 ≥
-      64 * (steps q : ℝ) ^ 2 * (q.d : ℝ) ^ 2 * q.σ ^ 2 := by
-    have h1 : ((8 * (steps q : ℝ) * (q.d : ℝ) * q.σ / q.ε) ^ 2 : ℝ) ≤ (replicas q : ℝ) :=
-      le_trans (Nat.le_ceil _) (by
-        simp only [replicas, Nat.cast_add, Nat.cast_one]
-        linarith)
-    have h2 : (8 * (steps q : ℝ) * (q.d : ℝ) * q.σ / q.ε) ^ 2 * q.ε ^ 2
-        = 64 * (steps q : ℝ) ^ 2 * (q.d : ℝ) ^ 2 * q.σ ^ 2 := by
-      field_simp
-      ring
-    calc 64 * (steps q : ℝ) ^ 2 * (q.d : ℝ) ^ 2 * q.σ ^ 2
-        = (8 * (steps q : ℝ) * (q.d : ℝ) * q.σ / q.ε) ^ 2 * q.ε ^ 2 := h2.symm
-      _ ≤ (replicas q : ℝ) * q.ε ^ 2 := mul_le_mul_of_nonneg_right h1 (by positivity)
+  have hp0 : 0 < min q.μ q.L := lt_min_iff.mpr ⟨hμ, hL⟩
+  have hp1 : 0 < (min q.μ q.L) ^ 2 * q.ε ^ 2 :=
+    mul_pos (pow_pos hp0 2) (pow_pos hε 2)
+  have hnoise : (replicas q : ℝ) * (mu ^ 2 * q.ε ^ 2) ≥
+      128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 := by
+    show (replicas q : ℝ) * ((min q.μ q.L) ^ 2 * q.ε ^ 2) ≥
+      128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2
+    have hc : (replicas q : ℝ) =
+        1 + ⌈128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2⌉₊ := by
+      simp only [replicas, Nat.cast_add, Nat.cast_one]
+    have h1 : (128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2 : ℝ) ≤
+        (replicas q : ℝ) := by
+      rw [hc]
+      exact le_trans (Nat.le_ceil _) (by linarith)
+    calc 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2
+        = 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2
+            * ((min q.μ q.L) ^ 2 * q.ε ^ 2) := by field_simp
+      _ ≤ (replicas q : ℝ) * ((min q.μ q.L) ^ 2 * q.ε ^ 2) :=
+          mul_le_mul_of_nonneg_right h1 (by positivity)
   have hbound : (1 - mu / q.L) ^ (steps q) * (q.L / 2 * q.R ^ 2)
-      + (steps q : ℝ) * (1 / q.L)
-          * SecantPolyak.batchError q.d (replicas q) q.σ q.L (bandwidth q) ≤ q.ε :=
-    SecantPolyak.Tuning.tuning_bound hL hR hσ hmu hmuL hε hK0 hd hm0
+      + (1 / mu) * SecantPolyak.batchError q.d (replicas q) q.σ q.L (bandwidth q) ≤ q.ε :=
+    SecantPolyak.Tuning.tuning_bound hL hR hσ hmu hmuL hε hd hm0
       (by simpa [contraction] using hLambda) rfl hnoise
   have hmain := SecantPolyak.space_accuracy (E := q.E) (d := q.d) (hd := hd) (e := e) (f := f)
     (L := q.L) (R := q.R) (σ := q.σ) (μ := mu) (ε := q.ε) (x0 := q.x0) (xstar := xstar)

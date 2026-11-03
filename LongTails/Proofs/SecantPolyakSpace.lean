@@ -81,70 +81,66 @@ lemma gap_term (hL : 0 < L) (hμL : μ ≤ L) (hε : 0 < ε)
         mul_le_mul_of_nonneg_left h6 (by positivity)
     _ = ε / 2 := by field_simp
 
-/-- The bandwidth term is at most a quarter of the target accuracy. -/
-lemma bias_term (hL : 0 < L) (hε : 0 < ε) (hK : 0 < K) (hd : 0 < d)
-    (hh : h = Real.sqrt (ε / (2 * (K : ℝ) * (d : ℝ) * L))) :
-    (K : ℝ) * (1 / L) * (2 * ((d : ℝ) * (L * h / 2) ^ 2)) ≤ ε / 4 := by
-  have hK' : (0 : ℝ) < K := by exact_mod_cast hK
+/-- The bandwidth term, seen through the contraction weights, fits a quarter of the target. -/
+lemma bias_term (hL : 0 < L) (hμ : 0 < μ) (hε : 0 < ε) (hd : 0 < d)
+    (hh : h = Real.sqrt (μ * ε / (4 * (d : ℝ) * L ^ 2))) :
+    (1 / μ) * (2 * ((d : ℝ) * (L * h / 2) ^ 2)) ≤ ε / 4 := by
   have hd' : (0 : ℝ) < d := by exact_mod_cast hd
-  have h2 : h ^ 2 = ε / (2 * (K : ℝ) * (d : ℝ) * L) := by
+  have h2 : h ^ 2 = μ * ε / (4 * (d : ℝ) * L ^ 2) := by
     rw [hh, Real.sq_sqrt]
     positivity
-  have h3 : (K : ℝ) * (1 / L) * (2 * ((d : ℝ) * (L * h / 2) ^ 2))
-      = (K : ℝ) * (d : ℝ) * L * h ^ 2 / 2 := by field_simp
-  rw [h3, h2]
-  field_simp
+  have h3 : (1 / μ) * (2 * ((d : ℝ) * (L * h / 2) ^ 2)) = (d : ℝ) * L ^ 2 * h ^ 2 / (2 * μ) := by
+    field_simp
+  have h4 : (d : ℝ) * L ^ 2 * h ^ 2 / (2 * μ) = ε / 8 := by
+    rw [h2]
+    field_simp
+    ring
   linarith
 
-/-- The noise term is at most a quarter of the target accuracy. -/
-lemma noise_term (hL : 0 < L) (hK : 0 < K) (hd : 0 < d) (hm : 0 < m)
-    (hh : 0 < h) (hnoise : ε * (L * (h ^ 2 * (m : ℝ))) ≥ 32 * (K : ℝ) * (d : ℝ) * σ ^ 2) :
-    (K : ℝ) * (1 / L) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ))) ≤ ε / 4 := by
-  have h1 : (K : ℝ) * (1 / L) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ)))
-      = (K : ℝ) * (8 * (d : ℝ) * σ ^ 2) / (L * (h ^ 2 * (m : ℝ))) := by field_simp
-  rw [h1]
-  apply (div_le_iff₀ (by positivity : 0 < L * (h ^ 2 * (m : ℝ)))).mpr
-  nlinarith [hnoise]
-
-/-- Geometric contraction plus batch error fits the target accuracy. -/
-lemma tuning_bound (hL : 0 < L) (_hR : 0 ≤ R) (_hσ : 0 ≤ σ) (_hμ : 0 < μ) (hμL : μ ≤ L)
-    (hε : 0 < ε) (hK : 0 < K) (hd : 0 < d) (hm : 0 < m)
-    (hLambda : (K : ℝ) * (μ / L) ≥ 1 + Real.log (1 + 2 * L * R ^ 2 / ε))
-    (hh : h = Real.sqrt (ε / (2 * (K : ℝ) * (d : ℝ) * L)))
-    (hnoise : (m : ℝ) * ε ^ 2 ≥ 64 * (K : ℝ) ^ 2 * (d : ℝ) ^ 2 * σ ^ 2) :
-    (1 - μ / L) ^ K * (L / 2 * R ^ 2) + (K : ℝ) * (1 / L) * batchError d m σ L h ≤ ε := by
-  have hK' : (0 : ℝ) < K := by exact_mod_cast hK
+/-- The noise term, seen through the contraction weights, fits a quarter of the target. -/
+lemma noise_term (hL : 0 < L) (hμ : 0 < μ) (hε : 0 < ε) (hd : 0 < d) (hm : 0 < m)
+    (hh : h = Real.sqrt (μ * ε / (4 * (d : ℝ) * L ^ 2)))
+    (hnoise : (m : ℝ) * (μ ^ 2 * ε ^ 2) ≥ 128 * (d : ℝ) ^ 2 * L ^ 2 * σ ^ 2) :
+    (1 / μ) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ))) ≤ ε / 4 := by
   have hd' : (0 : ℝ) < d := by exact_mod_cast hd
   have hm' : (0 : ℝ) < m := by exact_mod_cast hm
-  have hh0 : 0 < h := by
-    rw [hh]
-    refine Real.sqrt_pos.mpr (div_pos hε ?_)
-    positivity
-  have hsq : h ^ 2 = ε / (2 * (K : ℝ) * (d : ℝ) * L) := by
+  have h2 : h ^ 2 = μ * ε / (4 * (d : ℝ) * L ^ 2) := by
     rw [hh, Real.sq_sqrt]
     positivity
-  have hkey : ε * (L * (h ^ 2 * (m : ℝ))) = (m : ℝ) * ε ^ 2 / (2 * (K : ℝ) * (d : ℝ)) := by
-    rw [hsq]
+  have h3 : (1 / μ) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ)))
+      = 8 * (d : ℝ) * σ ^ 2 / (μ * h ^ 2 * (m : ℝ)) := by field_simp
+  rw [h3]
+  have h4 : μ * h ^ 2 * (m : ℝ) = μ ^ 2 * ε * (m : ℝ) / (4 * (d : ℝ) * L ^ 2) := by
+    rw [h2]
+    ring
+  rw [h4]
+  have h5 : 8 * (d : ℝ) * σ ^ 2 / (μ ^ 2 * ε * (m : ℝ) / (4 * (d : ℝ) * L ^ 2))
+      = 32 * (d : ℝ) ^ 2 * L ^ 2 * σ ^ 2 / (μ ^ 2 * ε * (m : ℝ)) := by
     field_simp
-  have hnoise' : ε * (L * (h ^ 2 * (m : ℝ))) ≥ 32 * (K : ℝ) * (d : ℝ) * σ ^ 2 := by
-    rw [hkey]
-    apply (le_div_iff₀ (by positivity : 0 < (2 : ℝ) * (K : ℝ) * (d : ℝ))).mpr
-    nlinarith [hnoise]
+    ring
+  rw [h5]
+  refine (div_le_iff₀ (by positivity : (0 : ℝ) < μ ^ 2 * ε * (m : ℝ))).mpr ?_
+  nlinarith [hnoise]
+
+/-- Geometric contraction plus the contracted batch error fits the target accuracy. -/
+lemma tuning_bound (hL : 0 < L) (_hR : 0 ≤ R) (_hσ : 0 ≤ σ) (hμ : 0 < μ) (hμL : μ ≤ L)
+    (hε : 0 < ε) (hd : 0 < d) (hm : 0 < m)
+    (hLambda : (K : ℝ) * (μ / L) ≥ 1 + Real.log (1 + 2 * L * R ^ 2 / ε))
+    (hh : h = Real.sqrt (μ * ε / (4 * (d : ℝ) * L ^ 2)))
+    (hnoise : (m : ℝ) * (μ ^ 2 * ε ^ 2) ≥ 128 * (d : ℝ) ^ 2 * L ^ 2 * σ ^ 2) :
+    (1 - μ / L) ^ K * (L / 2 * R ^ 2) + (1 / μ) * batchError d m σ L h ≤ ε := by
   have hg := gap_term hL hμL hε hLambda
-  have hb := bias_term hL hε hK hd hh
-  have hn := noise_term hL hK hd hm hh0 hnoise'
-  have hsum : (K : ℝ) * (1 / L) * batchError d m σ L h
-      ≤ (K : ℝ) * (1 / L) * (2 * ((d : ℝ) * (L * h / 2) ^ 2))
-        + (K : ℝ) * (1 / L) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ))) := by
-    unfold batchError
-    have h1 : 0 ≤ (K : ℝ) * (1 / L) := by positivity
-    have h2 : 0 ≤ 8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ)) := by positivity
-    have h3 : 0 ≤ 2 * ((d : ℝ) * (L * h / 2) ^ 2) := by positivity
-    nlinarith
-  calc (1 - μ / L) ^ K * (L / 2 * R ^ 2) + (K : ℝ) * (1 / L) * batchError d m σ L h
-      ≤ ε / 2 + (K : ℝ) * (1 / L) * batchError d m σ L h := add_le_add hg (le_refl _)
-    _ ≤ ε / 2 + ((K : ℝ) * (1 / L) * (2 * ((d : ℝ) * (L * h / 2) ^ 2))
-        + (K : ℝ) * (1 / L) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ)))) := by
+  have hb := bias_term hL hμ hε hd hh
+  have hn := noise_term hL hμ hε hd hm hh hnoise
+  have hsum : (1 / μ) * batchError d m σ L h
+      = (1 / μ) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ)))
+        + (1 / μ) * (2 * ((d : ℝ) * (L * h / 2) ^ 2)) := by
+    show (1 / μ) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ)) + 2 * ((d : ℝ) * (L * h / 2) ^ 2)) = _
+    rw [mul_add]
+  calc (1 - μ / L) ^ K * (L / 2 * R ^ 2) + (1 / μ) * batchError d m σ L h
+      ≤ ε / 2 + ((1 / μ) * (8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * (m : ℝ)))
+        + (1 / μ) * (2 * ((d : ℝ) * (L * h / 2) ^ 2))) := by
+          rw [hsum]
           linarith
     _ ≤ ε / 2 + (ε / 4 + ε / 4) := by linarith
     _ = ε := by ring
@@ -168,14 +164,13 @@ lemma space_accuracy {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     (hmean : ∀ x, (∫ ω, g x ω ∂(p : Measure Ω)) = f x)
     (hgsq : ∀ x, Integrable (fun ω => (g x ω - f x) ^ 2) (p : Measure Ω))
     (hvar : ∀ x, (∫ ω, (g x ω - f x) ^ 2 ∂(p : Measure Ω)) ≤ σ ^ 2)
-    (K m : ℕ) (hK : 0 < K) (hm : 0 < m)
-    (hbound : (1 - μ / L) ^ K * (L / 2 * R ^ 2)
-        + (K : ℝ) * (1 / L)
-            * batchError d m σ L (Real.sqrt (ε / (2 * (K : ℝ) * (d : ℝ) * L))) ≤ ε) :
+    (K m : ℕ) (_hK : 0 < K) (hm : 0 < m)
+    (hbound : (1 - μ / L) ^ K * (L / 2 * R ^ 2) + (1 / μ)
+        * batchError d m σ L (Real.sqrt (μ * ε / (4 * (d : ℝ) * L ^ 2))) ≤ ε) :
     let result := fun seed : Unit × (ℕ → Ω) =>
       execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
         (ofPoint e.symm
-          (secantDescent hd hm L (Real.sqrt (ε / (2 * (K : ℝ) * (d : ℝ) * L))) (e x0)))
+          (secantDescent hd hm L (Real.sqrt (μ * ε / (4 * (d : ℝ) * L ^ 2))) (e x0)))
         (fun _ => K * (2 * d * m)) seed.1 seed.2
     Measurable result ∧
       Integrable (fun seed => f (result seed) - f xstar)
@@ -184,10 +179,9 @@ lemma space_accuracy {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
           ∂((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω)))) ≤ ε := by
   classical
   intro result
-  let hband : ℝ := Real.sqrt (ε / (2 * (K : ℝ) * (d : ℝ) * L))
+  let hband : ℝ := Real.sqrt (μ * ε / (4 * (d : ℝ) * L ^ 2))
   have hhb : 0 < hband := by
-    refine Real.sqrt_pos.mpr (div_pos hε ?_)
-    have hK' : (0 : ℝ) < K := by exact_mod_cast hK
+    refine Real.sqrt_pos.mpr (div_pos (mul_pos hμ hε) ?_)
     have hd' : (0 : ℝ) < d := by exact_mod_cast hd
     positivity
   set F : Point d → ℝ := fun y => f (e.symm y) with hFdef
@@ -279,22 +273,13 @@ lemma space_accuracy {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
       have h5 : L / 2 * ‖x0 - xstar‖ ^ 2 ≤ L / 2 * R ^ 2 :=
         mul_le_mul_of_nonneg_left h3 (by positivity)
       exact le_trans h4 h5
-    have hbnd : (∫ seed : Unit × (ℕ → Ω), F (execCo seed) - F (e xstar)
-            ∂((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω))))
-        ≤ (1 - μ / L) ^ K * (F (e x0) - F (e xstar))
-          + (K : ℝ) * (1 / L) * batchError d m σ L hband := by
-      have h1 := hco.2.2
-      have hc : (K : ℝ) * ((1 / L) * batchError d m σ L hband)
-          = (K : ℝ) * (1 / L) * batchError d m σ L hband := (mul_assoc _ _ _).symm
-      rw [hc] at h1
-      exact h1
     calc (∫ seed : Unit × (ℕ → Ω), F (execCo seed) - F (e xstar)
             ∂((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω))))
         ≤ (1 - μ / L) ^ K * (F (e x0) - F (e xstar))
-          + (K : ℝ) * (1 / L) * batchError d m σ L hband := hbnd
+          + (1 / μ) * batchError d m σ L hband := hco.2.2
       _ ≤ (1 - μ / L) ^ K * (L / 2 * R ^ 2)
-          + (K : ℝ) * (1 / L)
-              * batchError d m σ L (Real.sqrt (ε / (2 * (K : ℝ) * (d : ℝ) * L))) := by
+          + (1 / μ)
+              * batchError d m σ L (Real.sqrt (μ * ε / (4 * (d : ℝ) * L ^ 2))) := by
           refine add_le_add
             (mul_le_mul_of_nonneg_left h2
               (pow_nonneg (by

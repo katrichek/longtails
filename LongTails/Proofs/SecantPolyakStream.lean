@@ -102,8 +102,8 @@ lemma measurable_stepSlot_joint {d m : ℕ} {g : Point d → Ω → ℝ}
       (q.1, toCells (q.2 : secantSpace d m → Ω))) := measurable_fst.prodMk (h1.comp measurable_snd)
   exact (measurable_secantStep L hg h).comp h2
 
-/-- `K` slot-driven steps contract the expected gap geometrically and accumulate `K`
-copies of the batch error. -/
+/-- `K` slot-driven steps contract the expected gap geometrically and accumulate the batch
+error with the contraction weights, which is bounded by one batch error per `μ`. -/
 lemma secant_accuracy_slot {d m K : ℕ} {g : Point d → Ω → ℝ} {f : Point d → ℝ} {σ L μ h : ℝ}
     {x0 xstar : Point d}
     (hh : 0 < h) (hL : 0 < L) (hμ : 0 < μ) (hμL : μ ≤ L)
@@ -121,8 +121,7 @@ lemma secant_accuracy_slot {d m K : ℕ} {g : Point d → Ω → ℝ} {f : Point
         (Measure.pi fun _ : Fin K => slotLaw d m p) ∧
       (∫ ξ : Fin K → secantSpace d m → Ω,
           f (runSlot L g h x0 ξ) - f xstar ∂Measure.pi fun _ : Fin K => slotLaw d m p) ≤
-        (1 - μ / L) ^ K * (f x0 - f xstar) +
-          (K : ℝ) * ((1 / L) * batchError d m σ L h) := by
+        (1 - μ / L) ^ K * (f x0 - f xstar) + (1 / μ) * batchError d m σ L h := by
   classical
   have hρ : 0 ≤ 1 - μ / L := by
     have : μ / L ≤ 1 := (div_le_one hL).mpr hμL
@@ -142,12 +141,20 @@ lemma secant_accuracy_slot {d m K : ℕ} {g : Point d → Ω → ℝ} {f : Point
   have hkey := iterateSamples_measurable_integral (advance := stepSlot L g h)
     (measurable_stepSlot_joint hg h) (P := ⟨slotLaw d m p, inferInstance⟩)
     (V := V) hV hV0 hρ hstep K x0
-  have hsum : (∑ j ∈ Finset.range K, (1 - μ / L) ^ j) ≤ (K : ℝ) := by
-    calc (∑ j ∈ Finset.range K, (1 - μ / L) ^ j) ≤ ∑ j ∈ Finset.range K, (1 : ℝ) :=
-        Finset.sum_le_sum fun j _ => le_trans (pow_le_pow_of_le_one hρ
-          (by have : 0 ≤ μ / L := div_nonneg (le_of_lt hμ) (le_of_lt hL); linarith)
-          (Nat.zero_le j)) (by simp)
-      _ = (K : ℝ) := by simp
+  have hρ1 : 1 - μ / L < 1 := by
+    have : 0 < μ / L := div_pos hμ hL
+    linarith
+  have hsum : (∑ j ∈ Finset.range K, (1 - μ / L) ^ j) ≤ L / μ := by
+    have hpos : 0 < μ / L := div_pos hμ hL
+    have h1 : (∑ j ∈ Finset.range K, (1 - μ / L) ^ j) * (1 - (1 - μ / L)) =
+        1 - (1 - μ / L) ^ K := geom_sum_mul_neg _ K
+    have h2 : 1 - (1 - μ / L) = μ / L := by ring
+    rw [h2] at h1
+    have hle : (∑ j ∈ Finset.range K, (1 - μ / L) ^ j) * (μ / L) ≤ 1 := by
+      rw [h1]
+      linarith [pow_nonneg hρ K]
+    calc (∑ j ∈ Finset.range K, (1 - μ / L) ^ j) ≤ 1 / (μ / L) := (le_div_iff₀ hpos).mpr hle
+      _ = L / μ := by field_simp
   refine ⟨hkey.1, le_trans hkey.2 ?_⟩
   have hK : 0 ≤ (1 / L) * batchError d m σ L h := by
     simp only [batchError]
@@ -156,10 +163,11 @@ lemma secant_accuracy_slot {d m K : ℕ} {g : Point d → Ω → ℝ} {f : Point
         ((1 / L) * batchError d m σ L h) *
           ∑ j ∈ Finset.range K, (1 - μ / L) ^ j
       ≤ (1 - μ / L) ^ K * (f x0 - f xstar) +
-          ((1 / L) * batchError d m σ L h) * (K : ℝ) := by
+          ((1 / L) * batchError d m σ L h) * (L / μ) := by
           refine add_le_add (le_refl _) (mul_le_mul_of_nonneg_left hsum hK)
-      _ = (1 - μ / L) ^ K * (f x0 - f xstar) +
-          (K : ℝ) * ((1 / L) * batchError d m σ L h) := by ring
+      _ = (1 - μ / L) ^ K * (f x0 - f xstar) + (1 / μ) * batchError d m σ L h := by
+          have hne : μ ≠ 0 := ne_of_gt hμ
+          field_simp
 
 /-- Cutting the step blocks out of an i.i.d. oracle stream gives the slot product law. -/
 lemma secant_stream_law {d m K : ℕ} (P : ProbabilityMeasure (ℕ → Ω))
@@ -379,7 +387,7 @@ lemma executed_accuracy {d m K : ℕ} (hd : 0 < d) (hm : 0 < m) {g : Point d →
         ((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω))) ∧
       (∫ seed, f (result seed) - f xstar
           ∂((Measure.dirac () : Measure Unit).prod (P : Measure (ℕ → Ω)))) ≤
-        (1 - μ / L) ^ K * (f x0 - f xstar) + (K : ℝ) * ((1 / L) * batchError d m σ L h) := by
+        (1 - μ / L) ^ K * (f x0 - f xstar) + (1 / μ) * batchError d m σ L h := by
   classical
   intro result
   have hbc : (fun _ : Fin 1 => K * Fintype.card (secantSpace d m))
@@ -424,7 +432,7 @@ lemma executed_accuracy {d m K : ℕ} (hd : 0 < d) (hm : 0 < m) {g : Point d →
             f (runSlot (K := K) L g h x0 xi) - f xstar
             ∂(Measure.pi fun _ : Fin K => slotLaw d m p) :=
           integral_comp_preserving hmp ha.1
-      _ ≤ (1 - μ / L) ^ K * (f x0 - f xstar) + (K : ℝ) * ((1 / L) * batchError d m σ L h) := ha.2
+      _ ≤ (1 - μ / L) ^ K * (f x0 - f xstar) + (1 / μ) * batchError d m σ L h := ha.2
 
 
 end OracleTemplate.SecantPolyak
