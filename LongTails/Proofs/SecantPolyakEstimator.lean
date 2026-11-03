@@ -127,7 +127,9 @@ lemma reply_error_moment {d m : ℕ} {g : Point d → Ω → ℝ} {f : Point d �
     (hgr : ∀ x, HasGradientAt f (gradient f x) x)
     (hlip : ∀ x y, ‖gradient f x - gradient f y‖ ≤ L * ‖x - y‖)
     (hm : 0 < m) (x : Point d) :
-    (∫ ξ : Fin m → Fin d × Bool → Ω, ‖reply (g := g) h x ξ - gradient f x‖ ^ 2
+    Integrable (fun ξ : Fin m → Fin d × Bool → Ω => ‖reply (g := g) h x ξ - gradient f x‖ ^ 2)
+        (batchLaw d m p) ∧
+      (∫ ξ : Fin m → Fin d × Bool → Ω, ‖reply (g := g) h x ξ - gradient f x‖ ^ 2
         ∂(batchLaw d m p)) ≤
         8 * (d : ℝ) * σ ^ 2 / (h ^ 2 * m) + 2 * ((d : ℝ) * (L * h / 2) ^ 2) := by
   classical
@@ -162,6 +164,7 @@ lemma reply_error_moment {d m : ℕ} {g : Point d → Ω → ℝ} {f : Point d �
         2 * ‖difference h x f - gradient f x‖ ^ 2 := by positivity
     rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg h0, abs_of_nonneg hne]
     exact hpt ξ
+  refine ⟨hL, ?_⟩
   refine le_trans (integral_mono hL hI2 hpt) ?_
   calc (∫ ξ, 2 * ‖reply (g := g) h x ξ - difference h x f‖ ^ 2 +
         2 * ‖difference h x f - gradient f x‖ ^ 2 ∂(batchLaw d m p))
