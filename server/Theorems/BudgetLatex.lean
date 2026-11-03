@@ -103,6 +103,10 @@ private def binary (args : Array Expr) (op : String) (bp : Nat)
     guard (structName.getString! == "Params" || structName.getString! == "Public")
     let mut parameter := args[projection.numParams]!
     while !parameter.isFVar do
+      if parameter.getAppFn.constName? == some ``Subtype.val then
+        let some inner := parameter.getAppArgs.back? | failure
+        parameter := inner
+        continue
       let parentName := parameter.getAppFn.constName!
       let some parent ← getProjectionFnInfo? parentName | failure
       guard ((getStructureParentInfo (← getEnv) parent.ctorName.getPrefix).any

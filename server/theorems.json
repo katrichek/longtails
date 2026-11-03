@@ -3297,6 +3297,27 @@
   },
   {
     "budget": {
+      "latex": "\\left(1 + \\left\\lceil \\frac{\\log\\left(\\frac{4 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)}{\\log\\left(\\frac{9}{4}\\right)} \\right\\rceil_{+}\\right) \\cdot \\left(2 \\cdot \\left(1 + \\left\\lceil \\frac{144 \\cdot \\left(1 + \\left\\lceil \\frac{\\log\\left(\\frac{4 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)}{\\log\\left(\\frac{9}{4}\\right)} \\right\\rceil_{+}\\right) \\cdot \\sigma^{2}}{\\varepsilon^{2}} \\right\\rceil_{+}\\right)\\right)",
+      "oracle": 0,
+      "type": "LongTails.Setups.ZerothOrderLineConvex.spec.Params → ℕ",
+      "value": "fun q =>\n  (1 + ⌈Real.log (4 * (↑q).L * (↑q).R ^ 2 / (↑q).ε) / Real.log (9 / 4)⌉₊) *\n    (2 *\n      (1 + ⌈144 * (1 + ↑⌈Real.log (4 * (↑q).L * (↑q).R ^ 2 / (↑q).ε) / Real.log (9 / 4)⌉₊) * (↑q).σ ^ 2 / (↑q).ε ^ 2⌉₊))"
+    },
+    "budgets": [
+      {
+        "latex": "\\left(1 + \\left\\lceil \\frac{\\log\\left(\\frac{4 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)}{\\log\\left(\\frac{9}{4}\\right)} \\right\\rceil_{+}\\right) \\cdot \\left(2 \\cdot \\left(1 + \\left\\lceil \\frac{144 \\cdot \\left(1 + \\left\\lceil \\frac{\\log\\left(\\frac{4 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)}{\\log\\left(\\frac{9}{4}\\right)} \\right\\rceil_{+}\\right) \\cdot \\sigma^{2}}{\\varepsilon^{2}} \\right\\rceil_{+}\\right)\\right)",
+        "oracle": 0,
+        "type": "LongTails.Setups.ZerothOrderLineConvex.spec.Params → ℕ",
+        "value": "fun q =>\n  (1 + ⌈Real.log (4 * (↑q).L * (↑q).R ^ 2 / (↑q).ε) / Real.log (9 / 4)⌉₊) *\n    (2 *\n      (1 + ⌈144 * (1 + ↑⌈Real.log (4 * (↑q).L * (↑q).R ^ 2 / (↑q).ε) / Real.log (9 / 4)⌉₊) * (↑q).σ ^ 2 / (↑q).ε ^ 2⌉₊))"
+      }
+    ],
+    "module": "LongTails.Theorems.LineSearchZerothOrderConvex",
+    "namespace": "LongTails.Setups.ZerothOrderLineConvex",
+    "setup": "LongTails.Setups.ZerothOrderLineConvex",
+    "statement": "OracleTemplate.Convergence LongTails.Setups.ZerothOrderLineConvex.spec\n  LongTails.Theorems.LineSearchZerothOrderConvex.budget",
+    "theorem": "LongTails.Theorems.LineSearchZerothOrderConvex.result"
+  },
+  {
+    "budget": {
       "latex": "\\left\\lceil -\\log_{2}\\left(\\delta\\right) \\right\\rceil_{+} \\cdot \\left(4 \\cdot \\left\\lceil 510 \\cdot \\sqrt{\\frac{d \\cdot \\left(r + 1\\right) \\cdot L0 \\cdot R^{2}}{\\varepsilon}} + 1300 \\cdot \\left(r + 1 + L1 \\cdot R \\cdot \\left(\\sqrt{d} \\cdot \\sqrt{r + 1}\\right)\\right) \\cdot \\log\\left(\\exp\\left(1\\right) + \\frac{8 \\cdot \\Delta}{\\varepsilon}\\right) \\right\\rceil_{+} + 1\\right)",
       "oracle": 0,
       "type": "LongTails.Setups.ZerothOrderMatrixGeneralizedSmooth.spec.Params → ℕ",
@@ -3315,6 +3336,27 @@
     "setup": "LongTails.Setups.ZerothOrderMatrixGeneralizedSmooth",
     "statement": "OracleTemplate.Convergence LongTails.Setups.ZerothOrderMatrixGeneralizedSmooth.spec\n  OracleTemplate.MatrixGeneralizedZO.budget",
     "theorem": "OracleTemplate.MatrixGeneralizedZO.result"
+  },
+  {
+    "budget": {
+      "latex": "\\left\\lceil \\frac{\\left(1 + \\log\\left(1 + \\frac{2 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)\\right) \\cdot L}{\\min\\left\\{ \\mu, L \\right\\}} \\right\\rceil_{+} \\cdot \\left(2 \\cdot d \\cdot \\left(1 + \\left\\lceil \\frac{\\frac{128 \\cdot d^{2} \\cdot L^{2} \\cdot \\sigma^{2}}{\\left(\\min\\left\\{ \\mu, L \\right\\}\\right)^{2}}}{\\varepsilon^{2}} \\right\\rceil_{+}\\right)\\right)",
+      "oracle": 0,
+      "type": "LongTails.Setups.ZerothOrderPolyakConvex.spec.Params → ℕ",
+      "value": "fun q =>\n  ⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L⌉₊ *\n    (2 * q.d * (1 + ⌈128 * ↑q.d ^ 2 * q.L ^ 2 * q.σ ^ 2 / min q.μ q.L ^ 2 / q.ε ^ 2⌉₊))"
+    },
+    "budgets": [
+      {
+        "latex": "\\left\\lceil \\frac{\\left(1 + \\log\\left(1 + \\frac{2 \\cdot L \\cdot R^{2}}{\\varepsilon}\\right)\\right) \\cdot L}{\\min\\left\\{ \\mu, L \\right\\}} \\right\\rceil_{+} \\cdot \\left(2 \\cdot d \\cdot \\left(1 + \\left\\lceil \\frac{\\frac{128 \\cdot d^{2} \\cdot L^{2} \\cdot \\sigma^{2}}{\\left(\\min\\left\\{ \\mu, L \\right\\}\\right)^{2}}}{\\varepsilon^{2}} \\right\\rceil_{+}\\right)\\right)",
+        "oracle": 0,
+        "type": "LongTails.Setups.ZerothOrderPolyakConvex.spec.Params → ℕ",
+        "value": "fun q =>\n  ⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L⌉₊ *\n    (2 * q.d * (1 + ⌈128 * ↑q.d ^ 2 * q.L ^ 2 * q.σ ^ 2 / min q.μ q.L ^ 2 / q.ε ^ 2⌉₊))"
+      }
+    ],
+    "module": "LongTails.Theorems.ZerothOrderPolyakConvex",
+    "namespace": "LongTails.Setups.ZerothOrderPolyakConvex",
+    "setup": "LongTails.Setups.ZerothOrderPolyakConvex",
+    "statement": "OracleTemplate.Convergence LongTails.Setups.ZerothOrderPolyakConvex.spec\n  LongTails.Theorems.ZerothOrderPolyakConvex.budget",
+    "theorem": "LongTails.Theorems.ZerothOrderPolyakConvex.result"
   },
   {
     "budget": {
