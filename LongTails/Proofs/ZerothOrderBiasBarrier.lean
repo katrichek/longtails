@@ -427,4 +427,25 @@ theorem exists_four_point_difference_bias (L h : ℝ) (hL : 0 < L) (hh : 0 < h) 
     have h3 : 0 < 5 * L * h / 24 := by positivity
     nlinarith
 
+
+/-- Bandwidth-uniform form of the barrier: at every probe radius `r` there is a convex `L`-smooth
+objective whose two-point estimator at distance `2r` from a minimizer has bias `L r / 4`, and the
+resulting linear penalty `⟪bias, x - xstar⟫` equals `L r² / 2`. -/
+theorem exists_bias_at_scale (L r : ℝ) (hL : 0 < L) (hr : 0 < r) :
+    ∃ (f : ℝ → ℝ) (x xstar : ℝ),
+      ConvexOn ℝ Set.univ f ∧
+        (∀ u v, |deriv f u - deriv f v| ≤ L * |u - v|) ∧
+        IsMinOn f Set.univ xstar ∧
+        x - xstar = 2 * r ∧
+        (f (x + r) - f (x - r)) / (2 * r) - deriv f x = L * r / 4 ∧
+        ((f (x + r) - f (x - r)) / (2 * r) - deriv f x) * (x - xstar) = L * r ^ 2 / 2 := by
+  have hle : r ≤ 2 * r := by linarith
+  obtain ⟨f, x, xstar, hcv, hlip, hmin, hdist, hbias, _hpos⟩ :=
+    exists_central_difference_bias L (2 * r) r hL hr (by linarith)
+  refine ⟨f, x, xstar, hcv, hlip, hmin, ?_, ?_, ?_⟩
+  · exact hdist
+  · exact hbias
+  · rw [hbias, hdist]
+    ring
+
 end LongTails.Proofs.ZerothOrderBiasBarrier
