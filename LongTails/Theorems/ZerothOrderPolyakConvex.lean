@@ -29,6 +29,41 @@ noncomputable def budget :
   fun q _ => ⌈(1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L⌉₊
     * (2 * q.d * (1 + ⌈128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2⌉₊))
 
+/-- The proved budget is logarithmic in `1/ε` times `ε⁻²`: the contraction factor contributes
+the logarithm, the batch contributes `ε⁻²`, and no further power of `ε` appears. -/
+lemma budget_le (q : LongTails.Setups.ZerothOrderPolyakConvex.Params) (i : Fin 1)
+    (hL : 0 < q.L) (_hR : 0 ≤ q.R) (_hσ : 0 ≤ q.σ) (hμ : 0 < q.μ) (hε : 0 < q.ε) :
+    (budget q i : ℝ) ≤ 2 * (q.d : ℝ)
+      * (1 + (1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L)
+      * (2 + 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2) := by
+  have hp : 0 < min q.μ q.L := lt_min_iff.mpr ⟨hμ, hL⟩
+  have hz : 0 ≤ 2 * q.L * q.R ^ 2 / q.ε := by positivity
+  have hlog : 0 ≤ Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε) :=
+    Real.log_nonneg (by linarith)
+  set a : ℝ := (1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L with hadef
+  set X : ℝ := 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2 with hXdef
+  have ha : 0 ≤ a := by
+    rw [hadef]
+    positivity
+  have hX : 0 ≤ X := by
+    rw [hXdef]
+    positivity
+  have hK : (⌈a⌉₊ : ℝ) ≤ a + 1 := (Nat.ceil_lt_add_one ha).le
+  have hM : (1 + ⌈X⌉₊ : ℝ) ≤ 2 + X := by
+    have := Nat.ceil_lt_add_one hX
+    linarith
+  calc (budget q i : ℝ)
+      = ⌈a⌉₊ * (2 * (q.d : ℝ) * (1 + ⌈X⌉₊)) := by
+        simp only [budget, a, X]
+        norm_cast
+    _ ≤ (a + 1) * (2 * (q.d : ℝ) * (2 + X)) := by
+        gcongr
+      _ = 2 * (q.d : ℝ) * (1 + a) * (2 + X) := by ring
+    _ = 2 * (q.d : ℝ)
+          * (1 + (1 + Real.log (1 + 2 * q.L * q.R ^ 2 / q.ε)) * q.L / min q.μ q.L)
+          * (2 + 128 * (q.d : ℝ) ^ 2 * q.L ^ 2 * q.σ ^ 2 / (min q.μ q.L) ^ 2 / q.ε ^ 2) := by
+        rw [hadef, hXdef]
+
 theorem result : Convergence LongTails.Setups.ZerothOrderPolyakConvex.spec budget := by
   classical
   refine ⟨fun q =>
