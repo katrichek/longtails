@@ -41,4 +41,32 @@ lemma schedIndex_cellInj {d M : ℕ} {m : ℕ → ℕ} (o : Offsets d m) (K k : 
     exact cellOf_cellInj hM t _
   rw [h3]
 
+/-- The flat-stream slot of round `l` used by the cell `t`. -/
+noncomputable def readFlat {d : ℕ} {m : ℕ → ℕ} (ξ : ℕ → Ω) (off : ℕ → ℕ) (l : ℕ)
+    (t : secantSpace d (m l)) : Ω :=
+  ξ (off l + (Fintype.equivFin (secantSpace d (m l)) t).val)
+
+/-- The points queried by one round of scheduled secant descent. -/
+noncomputable def roundReads {d : ℕ} {m : ℕ → ℕ} (h : ℝ) (g : Point d → Ω → ℝ) (ξ : ℕ → Ω) (off : ℕ → ℕ)
+    (l : ℕ)
+    (x : Point d) : secantSpace d (m l) → ℝ :=
+  fun t => g (secantPoint h x t) (readFlat ξ off l t)
+
+omit [MeasurableSpace Ω] in
+/-- The reply vector of a round determines the whole update, so only the embedded cells matter. -/
+lemma roundReads_congr {d : ℕ} {m : ℕ → ℕ} (h : ℝ) {g : Point d → Ω → ℝ} (ξ ξ' : ℕ → Ω)
+    (off : ℕ → ℕ) (l : ℕ) (x : Point d)
+    (hcell : ∀ t : secantSpace d (m l), readFlat ξ off l t = readFlat ξ' off l t) :
+    (roundReads h g ξ off l x : secantSpace d (m l) → ℝ) = roundReads h g ξ' off l x := by
+  refine funext fun t => congrArg (g (secantPoint h x t)) ?_
+  exact hcell t
+
+omit [MeasurableSpace Ω] in
+/-- Decoding the replies of one round only depends on the slots of that round. -/
+lemma roundReads_decode {d : ℕ} {m : ℕ → ℕ} (h : ℝ) {g : Point d → Ω → ℝ} (ξ : ℕ → Ω)
+    (off : ℕ → ℕ) (l k : ℕ) (x : Point d) :
+    secantDecode (m := m l) h (k, x) (roundReads h g ξ off l x)
+      = secantDecode (m := m l) h (k, x) (fun t : secantSpace d (m l) =>
+          g (secantPoint h x t) (readFlat ξ off l t)) := rfl
+
 end OracleTemplate.SecantPolyak.Scheduled
