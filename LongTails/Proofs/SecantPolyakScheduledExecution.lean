@@ -220,4 +220,40 @@ lemma execute_schedDescent {d M : ℕ} {m : ℕ → ℕ} (hd : 0 < d) {hmM : ∀
       (fun _ => o.off K) () ξ = _
   exact exec_aux hd (hmM := hmM) hm L h x0 o g ξ law K
 
+/-- Expected accuracy of the scheduled secant algorithm: geometric batch widths charge each round's
+batch error once, discounted by the contraction factor of the rounds that follow it. -/
+lemma exec_accuracy {p : Measure Ω} [IsProbabilityMeasure p] {d M K : ℕ} {m : ℕ → ℕ}
+    (hmM : ∀ k, m k ≤ M) (hm : ∀ k, 0 < m k)
+    (hd : 0 < d) {g : Point d → Ω → ℝ} {f : Point d → ℝ} {σ L μ h : ℝ} {x0 xstar : Point d}
+    (hh : 0 < h) (hL : 0 < L) (hμ : 0 < μ) (hμL : μ ≤ L)
+    (hg : Measurable (Function.uncurry g)) (hgi : ∀ x, Integrable (g x) p)
+    (hmean : ∀ x, (∫ ω, g x ω ∂p) = f x)
+    (hvi : ∀ x, Integrable (fun ω => (g x ω - f x) ^ 2) p)
+    (hv : ∀ x, (∫ ω, (g x ω - f x) ^ 2 ∂p) ≤ σ ^ 2) (hc : ConvexOn ℝ Set.univ f)
+    (hgr : ∀ x, HasGradientAt f (gradient f x) x)
+    (hlip : ∀ x y, ‖gradient f x - gradient f y‖ ≤ L * ‖x - y‖)
+    (hmin : IsMinOn f Set.univ xstar)
+    (hpl : ∀ x, 2 * μ * (f x - f xstar) ≤ ‖gradient f x‖ ^ 2)
+    (P : ProbabilityMeasure (ℕ → Ω))
+    (hind : iIndepFun (fun k (ξ : ℕ → Ω) => ξ k) (P : Measure _))
+    (hmarg : ∀ k, (P : Measure _).map (fun ξ : ℕ → Ω => ξ k) = (p : Measure _))
+    (o : Offsets d m) :
+    (∫ ξ, f (execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
+        (schedDescent hd hm L h x0) (fun _ => o.off K) () ξ) - f xstar ∂(P : Measure _))
+      ≤ (1 - μ / L) ^ K * (f x0 - f xstar)
+        + ∑ k ∈ Finset.range K, (1 - μ / L) ^ (K - 1 - k) * ((1 / L) * batchError d (m k) σ L h) := by
+  classical
+  have ha := sched_accuracy (d := d) (M := M) (K := K) (m := m) (x0 := x0) hmM hm hh hL hμ hμL hg hgi hmean hvi hv hc hgr hlip hmin hpl
+  have hpre := sched_stream_law_curry (M := M) m o K P hind hmarg
+  have hcomp : (fun ξ : ℕ → Ω =>
+        f (execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω }
+          (schedDescent hd hm L h x0) (fun _ => o.off K) () ξ) - f xstar)
+      = (fun ξ : ℕ → Ω =>
+          f (runSched (stepSched m hmM L g h) 0 K x0 (fun k : Fin K => fun t : secantSpace d M =>
+            ξ (schedIndex (d := d) (M := M) m o K ⟨k, t⟩))) - f xstar) := by
+    refine funext fun ξ => congrArg (fun v => f v - f xstar)
+      (execute_schedDescent hd (hmM := hmM) hm L h x0 o g ξ P K)
+  refine le_of_eq_of_le ((congrArg (fun F : (ℕ → Ω) → ℝ => ∫ ξ : ℕ → Ω, F ξ ∂(P : Measure _))
+      hcomp).trans (integral_comp_preserving hpre ha.1)) ha.2
+
 end OracleTemplate.SecantPolyak.Scheduled
