@@ -191,4 +191,33 @@ lemma roundsR_eq_runSched {d M : ℕ} {m : ℕ → ℕ} (hmM : ∀ k, m k ≤ M)
       simp only [Nat.zero_add]
       exact Prod.ext rfl rfl
 
+lemma exec_aux {d M : ℕ} {m : ℕ → ℕ} (hd : 0 < d) {hmM : ∀ k, m k ≤ M} (hm : ∀ k, 0 < m k) (L h : ℝ)
+    (x0 : Point d) (o : Offsets d m) (g : Point d → Ω → ℝ) (ξ : ℕ → Ω)
+    (law : ProbabilityMeasure (ℕ → Ω)) (K : ℕ) :
+    execute { Seed := fun _ => Ω, law := law, answer := fun _ (_, x) ω => g x ω }
+      (batchedSched (fun k => Fintype.card (secantSpace d (m k)))
+        (fun k => secant_card_pos hd (hm k)) (descent L x0) (schedQS h) (schedDec h) 0)
+      (fun _ => o.off K) () ξ
+      = runSched (stepSched m hmM L g h) 0 K x0
+          (fun k : Fin K => fun t : secantSpace d M => ξ (schedIndex m o K ⟨k, t⟩)) := by
+  classical
+  refine (OracleTemplate.StochasticGradient.execute_batchedSched (h0 := o.zero) (hs := fun j => o.step j) (law := law)
+    (K := K) (seed := ())).trans ?_
+  rw [show (descent L x0).initial () = (0, x0) from rfl]
+  exact ((congrArg (fun st => (descent L x0).output st)
+      (roundsR_eq_runSched hmM L h x0 o g ξ K)).trans rfl)
+
+lemma execute_schedDescent {d M : ℕ} {m : ℕ → ℕ} (hd : 0 < d) {hmM : ∀ k, m k ≤ M} (hm : ∀ k, 0 < m k)
+    (L h : ℝ) (x0 : Point d) (o : Offsets d m) (g : Point d → Ω → ℝ) (ξ : ℕ → Ω)
+    (law : ProbabilityMeasure (ℕ → Ω)) (K : ℕ) :
+    execute { Seed := fun _ => Ω, law := law, answer := fun _ (_, x) ω => g x ω }
+      (schedDescent hd hm L h x0) (fun _ => o.off K) () ξ
+      = runSched (stepSched m hmM L g h) 0 K x0
+          (fun k : Fin K => fun t : secantSpace d M => ξ (schedIndex m o K ⟨k, t⟩)) := by
+  show execute { Seed := fun _ => Ω, law := law, answer := fun _ (_, x) ω => g x ω }
+      (batchedSched (fun k => Fintype.card (secantSpace d (m k)))
+        (fun k => secant_card_pos hd (hm k)) (descent L x0) (schedQS h) (schedDec h) 0)
+      (fun _ => o.off K) () ξ = _
+  exact exec_aux hd (hmM := hmM) hm L h x0 o g ξ law K
+
 end OracleTemplate.SecantPolyak.Scheduled
