@@ -287,6 +287,15 @@ lemma cost_le (d : ℕ) (σ L h μ ε : ℝ) (hL : 0 < L) (hh : 0 < h) (hμ : 0 
           rw [one_sub_rat hL hμ]
           field_simp
 
+/-- The oracle slots consumed by `K` graded rounds fit one explicit closed-form budget. -/
+lemma slots_le_budget (d : ℕ) {sigma L h mu eps : ℝ} (hL : 0 < L) (hh : 0 < h) (hmu : 0 < mu)
+    (heps : 0 < eps) (hmuL : mu ≤ L) :
+    2 * d * ∑ n ∈ Finset.range K, graded (noiseScale d sigma L h mu eps) (rat L mu) K n
+      ≤ 2 * d * ⌈2 * K + noiseScale d sigma L h mu eps * (2 * L / mu)⌉₊ := by
+  refine Nat.mul_le_mul_left (2 * d) ((Nat.cast_le (α := ℝ)).mp ?_)
+  rw [Nat.cast_sum]
+  exact le_trans (cost_le d sigma L h mu eps hL hh hmu heps hmuL) (Nat.le_ceil _)
+
 /-- Contraction plus the graded batch error fits the target accuracy. -/
 lemma tuning_bound (d : ℕ) (σ L R h μ ε : ℝ) (hd : 0 < d) (hL : 0 < L) (_hR : 0 ≤ R)
     (hμ : 0 < μ) (hμL : μ ≤ L) (hε : 0 < ε)
