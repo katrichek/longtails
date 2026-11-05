@@ -26,6 +26,29 @@ noncomputable def runSched {S : Type} {d M : ℕ} (step : ℕ → S → (secantS
   | _, 0, x, _ => x
   | i, K + 1, x, Ξ => runSched step (i + 1) K (step i x (Ξ 0)) (fun j => Ξ j.succ)
 
+omit [MeasurableSpace Ω] in
+/-- A scheduled run can also be assembled by appending its last round. -/
+lemma runSched_snoc {S : Type} {d M : ℕ} (step : ℕ → S → (secantSpace d M → Ω) → S)
+    (i K : ℕ) (x : S) (Ξ : Fin (K + 1) → secantSpace d M → Ω) :
+    runSched step i (K + 1) x Ξ
+      = step (i + K) (runSched step i K x (fun j : Fin K => Ξ j.castSucc))
+          (Ξ ⟨K, Nat.lt_succ_self K⟩) := by
+  induction K generalizing i x with
+  | zero => rfl
+  | succ K ih =>
+      show runSched step (i + 1) (K + 1) (step i x (Ξ 0)) (fun j : Fin (K + 1) => Ξ j.succ) = _
+      rw [ih (i + 1) (step i x (Ξ 0))]
+      rw [show i + 1 + K = i + (K + 1) by omega]
+      have hlast : Ξ (Fin.succ ⟨K, Nat.lt_succ_self K⟩)
+          = Ξ ⟨K + 1, Nat.lt_succ_self (K + 1)⟩ := congrArg Ξ (Fin.ext rfl)
+      have hinner : runSched step i (K + 1) x (fun j : Fin (K + 1) => Ξ j.castSucc)
+          = runSched step (i + 1) K (step i x (Ξ 0)) (fun j : Fin K => Ξ j.castSucc.succ) := by
+        show runSched step (i + 1) K (step i x ((fun j : Fin (K + 1) => Ξ j.castSucc) 0))
+              (fun j : Fin K => (fun j : Fin (K + 1) => Ξ j.castSucc) j.succ) = _
+        refine congrArg (fun q => runSched step (i + 1) K (step i x (Ξ 0)) q)
+          (funext fun j => congrArg Ξ (Fin.ext rfl))
+      rw [hlast, hinner]
+
 /-- One round of the scheduled secant step: round `k` uses `m k` replicas of the ambient cells. -/
 noncomputable def stepSched {d M : ℕ} (m : ℕ → ℕ) (hmM : ∀ k, m k ≤ M) (L : ℝ)
     (g : Point d → Ω → ℝ) (h : ℝ) (k : ℕ) (x : Point d) (ω : secantSpace d M → Ω) : Point d :=
