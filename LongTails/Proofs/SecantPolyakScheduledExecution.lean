@@ -69,4 +69,46 @@ lemma roundReads_decode {d : ℕ} {m : ℕ → ℕ} (h : ℝ) {g : Point d → �
       = secantDecode (m := m l) h (k, x) (fun t : secantSpace d (m l) =>
           g (secantPoint h x t) (readFlat ξ off l t)) := rfl
 
+omit [MeasurableSpace Ω] in
+/-- Scheduled rounds only read ambient cells through the embedding, so streams that agree on the
+embedded cells of every round give the same analysed run. -/
+lemma runSched_congr {d M : ℕ} {m : ℕ → ℕ} (hmM : ∀ k, m k ≤ M) (L : ℝ)
+    {g : Point d → Ω → ℝ} (h : ℝ) (i K : ℕ) (x : Point d)
+    (Ξ Ξ' : Fin K → secantSpace d M → Ω)
+    (hcell : ∀ (l : ℕ) (hi : i ≤ l) (t : secantSpace d (m l)) (hl : l < i + K),
+        Ξ ⟨l - i, by omega⟩ (cellInj (hmM l) t) = Ξ' ⟨l - i, by omega⟩ (cellInj (hmM l) t)) :
+    runSched (stepSched m hmM L g h) i K x Ξ
+      = runSched (stepSched m hmM L g h) i K x Ξ' := by
+  classical
+  induction K generalizing i x with
+  | zero => rfl
+  | succ K ih =>
+      show runSched (stepSched m hmM L g h) (i + 1) K (stepSched m hmM L g h i x (Ξ 0))
+            (fun j : Fin K => Ξ ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩)
+        = runSched (stepSched m hmM L g h) (i + 1) K (stepSched m hmM L g h i x (Ξ' 0))
+            (fun j : Fin K => Ξ' ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩)
+      have hstep : stepSched m hmM L g h i x (Ξ 0) = stepSched m hmM L g h i x (Ξ' 0) := by
+        refine congrArg (fun ω : secantSpace d (m i) → Ω => stepSlot L g h x ω) (funext fun t => ?_)
+        have hpre := hcell i (Nat.le_refl i) t (by omega)
+        rw [show (⟨i - i, by omega⟩ : Fin (K + 1)) = (0 : Fin (K + 1)) from
+            Fin.ext (Nat.sub_self i)] at hpre
+        exact hpre
+      have hs : ∀ (l : ℕ) (hi : i + 1 ≤ l) (t : secantSpace d (m l)) (hl : l < i + 1 + K),
+          (fun j : Fin K => Ξ ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩) ⟨l - (i + 1), by omega⟩
+              (cellInj (hmM l) t)
+            = (fun j : Fin K => Ξ' ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩) ⟨l - (i + 1), by omega⟩
+                (cellInj (hmM l) t) := by
+        intro l hi t hl
+        have hp1 : l - i < K + 1 := by omega
+        have hp2 : l - (i + 1) + 1 < K + 1 := by omega
+        have hf' : (l - i : ℕ) = l - (i + 1) + 1 := by
+          rw [← Nat.sub_sub, Nat.sub_add_cancel (show (1 : ℕ) ≤ l - i by omega)]
+        have hf : (⟨l - i, hp1⟩ : Fin (K + 1)) = ⟨l - (i + 1) + 1, hp2⟩ := Fin.ext hf'
+        have hpre := hcell l (Nat.le_trans (Nat.le_succ i) hi) t (by omega)
+        rw [hf] at hpre
+        exact hpre
+      rw [ih (i + 1) (stepSched m hmM L g h i x (Ξ 0))
+        (fun j : Fin K => Ξ ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩)
+        (fun j : Fin K => Ξ' ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩) hs, hstep]
+
 end OracleTemplate.SecantPolyak.Scheduled
