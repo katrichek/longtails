@@ -53,6 +53,15 @@ lemma graded_lt (hC : 0 ≤ C) (htau : 0 ≤ tau) (K n : ℕ) :
   rw [h1]
   linarith
 
+/-- Later rounds of the graded schedule request at least as many replicas as earlier rounds, so the
+last round bounds the ambient batch size. -/
+lemma graded_le_last (C tau : ℝ) (hC : 0 ≤ C) (htau : 0 ≤ tau) (htau1 : tau ≤ 1) (K n : ℕ)
+    (hn : n ≤ K - 1) : graded C tau K n ≤ graded C tau K (K - 1) := by
+  unfold graded
+  refine Nat.add_le_add_left (Nat.ceil_le (α := ℝ) |>.mpr ?_) _
+  exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one htau htau1 (by omega)) hC).trans
+    (Nat.le_ceil _)
+
 lemma noiseConst_nonneg (d : ℕ) (σ L h : ℝ) (_hL : 0 < L) (hh : 0 < h) :
     0 ≤ noiseConst d σ L h := by
   show 0 ≤ 8 * (d : ℝ) * σ ^ 2 / (L * h ^ 2)
