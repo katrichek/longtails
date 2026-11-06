@@ -32,9 +32,9 @@ attribute [instance] Params.borelE Params.measurableΩ
 def base (p : Params) : LongTails.Setups.ZerothOrderPolyakConvex.Params :=
   { E := p.E, Ω := p.Ω, d := p.d, L := p.L, R := p.R, σ := p.σ, μ := p.μ, ε := p.ε, x0 := p.x0 }
 
-noncomputable def dirEstimate {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    (q : Params) (g : E → q.Ω → ℝ) (x z : E) (ω : q.Ω) : E :=
-  (1 / (2 * q.h)) • ((g (x + q.h • z) ω - g (x - q.h • z) ω) • z)
+noncomputable def dirSlot {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (q : Params) (g : E → q.Ω → ℝ) (x : E) (s : Bool) (z : E) (ω : q.Ω) : E :=
+  (1 / (2 * q.h)) • ((g (x + (if s then q.h else -q.h) • z) ω) • z)
 
 abbrev spec : Setup where
   Params := Params
@@ -45,7 +45,7 @@ abbrev spec : Setup where
   Output p := p.E
   publicInput p := p
   valid q := 0 < q.d ∧ 0 < q.L ∧ 0 ≤ q.R ∧ 0 ≤ q.σ ∧ 0 ≤ q.G ∧ 0 < q.μ ∧ 0 < q.ε ∧ 0 < q.h ∧
-    q.L * q.h ^ 2 * (q.d : ℝ) ≤ q.ε ∧ 2 * q.G ^ 2 * q.h ^ 2 ≤ q.σ ^ 2 * (q.d : ℝ)
+    q.L * q.h ^ 2 * (q.d : ℝ) ≤ q.ε
   admissible q f O :=
     LongTails.Setups.ZerothOrderPolyakConvex.baseShape (base q) f O ∧
       (∃ xstar, IsMinOn f univ xstar ∧ ‖q.x0 - xstar‖ ≤ q.R ∧
@@ -58,9 +58,9 @@ abbrev spec : Setup where
         (∃ xh, IsMinOn fh univ xh) ∧
         (∀ x, fh x - f x ≤ q.L * q.h ^ 2 * (q.d : ℝ) / 2) ∧
         (∀ x, f x - fh x ≤ q.L * q.h ^ 2 * (q.d : ℝ) / 2) ∧
-        (∀ x, (∫ z, (∫ ω, dirEstimate q g x z ω ∂(p : Measure _)) ∂(q.nu : Measure _))
-          = gradient fh x) ∧
-        (∀ x, (∫ z, (∫ ω, ‖dirEstimate q g x z ω - gradient fh x‖ ^ 2 ∂(p : Measure _))
+        (∀ x s, (∫ z, (∫ ω, dirSlot q g x s z ω ∂(p : Measure _)) ∂(q.nu : Measure _))
+          = (if s then (1 / 2 : ℝ) else -(1 / 2 : ℝ)) • gradient fh x) ∧
+        (∀ x s, (∫ z, (∫ ω, ‖dirSlot q g x s z ω‖ ^ 2 ∂(p : Measure _))
           ∂(q.nu : Measure _)) ≤ q.G ^ 2)
   successful q f output P :=
     Measurable output ∧
