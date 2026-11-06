@@ -74,7 +74,7 @@ abbrev spec : Setup where
           (P : Measure (ℕ → Point q.d × q.Ω)) = (probeLaw p : Measure (Point q.d × q.Ω))) ∧
       O = { Seed := fun _ => Point q.d × q.Ω, law := P,
             answer := fun _ (_, r) u => dirReply g r.1 r.2 u } ∧
-      Measurable (Function.uncurry g) ∧
+      Measurable (Function.uncurry g) ∧ Measurable f ∧
       (∃ xstar, IsMinOn f Set.univ xstar ∧ ‖q.x0 - xstar‖ ≤ q.R) ∧
       ∃ (fh : Point q.d → ℝ),
         ConvexOn ℝ Set.univ fh ∧
