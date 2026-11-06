@@ -448,4 +448,33 @@ theorem exists_bias_at_scale (L r : ℝ) (hL : 0 < L) (hr : 0 < r) :
   · rw [hbias, hdist]
     ring
 
+open scoped BigOperators
+
+/-- Rademacher value noise `sigma * (±1)`: sampling one coordinate of the central difference and
+rescaling by `n` has second moment `n² · sigma² / (2h²)`. -/
+lemma coord_sample_variance (n : ℕ) (hn : 0 < n) (sigma h : ℝ) (hh : 0 < h) :
+    (∑ _i : Fin n, ∑ a : Fin 2, ∑ b : Fin 2,
+        (((n : ℝ) * sigma * ((a : ℝ) - b)) / h) ^ 2) / (4 * n)
+      = (n : ℝ) ^ 2 * sigma ^ 2 / (2 * h ^ 2) := by
+  classical
+  have key : ∑ a : Fin 2, ∑ b : Fin 2, (((n : ℝ) * sigma * ((a : ℝ) - b)) / h) ^ 2
+      = ((n : ℝ) * sigma / h) ^ 2 * 2 := by
+    simp [Fin.sum_univ_two, div_pow, mul_pow]
+    ring
+  calc (∑ _i : Fin n, ∑ a : Fin 2, ∑ b : Fin 2,
+        (((n : ℝ) * sigma * ((a : ℝ) - b)) / h) ^ 2) / (4 * n)
+      = (∑ _i : Fin n, ((n : ℝ) * sigma / h) ^ 2 * 2) / (4 * n) := by
+          rw [Finset.sum_congr rfl (fun _ _ => key)]
+    _ = ((n : ℝ) * (((n : ℝ) * sigma / h) ^ 2 * 2)) / (4 * n) := by
+          simp [Finset.sum_const, Fintype.card_fin, nsmul_eq_mul]
+    _ = (n : ℝ) ^ 2 * sigma ^ 2 / (2 * h ^ 2) := by
+          field_simp [hn.ne', hh.ne']
+          ring
+
+/-- Averaging all `n` coordinates costs `n` times more queries and divides the variance by `n`, so
+the price-weighted variance that drives the budget is the same for every sampling scheme. -/
+lemma coord_price_variance (n : ℕ) (h : ℝ) (hh : 0 < h) :
+    2 * (n : ℝ) ^ 2 / (2 * h ^ 2) = (2 * n : ℝ) * ((n : ℝ) / (2 * h ^ 2)) := by
+  field_simp [hh.ne']
+
 end LongTails.Proofs.ZerothOrderBiasBarrier
