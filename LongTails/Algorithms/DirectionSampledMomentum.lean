@@ -29,15 +29,14 @@ noncomputable def dirQS {d : ℕ} {m : ℕ → ℕ} (θ h : ℝ) :
   fun k s t =>
     query θ ⟨s.2.1, s.2.2.1⟩ + (if t.val % 2 = 0 then h else -h) • s.2.2.2 ((∑ j ∈ Finset.range k, m j) + t.val / 2)
 
-/-- Decoding a round: the average of the `m k` direction-sampled two-point surrogates. -/
+/-- Decoding a round: the signed average of the `2 * m k` one-sided direction-sampled terms. -/
 noncomputable def dirDec {d : ℕ} {m : ℕ → ℕ} (h : ℝ) :
     ∀ k, (ℕ × Point d × Point d × (ℕ → Point d)) → (Fin (2 * m k) → ℝ) → Point d :=
   fun k s replies =>
     (1 / (m k : ℝ)) •
-      ∑ t : Fin (m k),
-        (1 / (2 * h)) •
-          ((replies ⟨2 * t.val, by have := t.isLt; omega⟩
-            - replies ⟨2 * t.val + 1, by have := t.isLt; omega⟩) • s.2.2.2 ((∑ j ∈ Finset.range k, m j) + t.val))
+      ∑ t : Fin (2 * m k),
+        (if t.val % 2 = 0 then (1 : ℝ) else -1) •
+          ((1 / (2 * h)) • (replies t • s.2.2.2 ((∑ j ∈ Finset.range k, m j) + t.val / 2)))
 
 /-- Direction-sampled momentum descent: each round probes `2 * m k` points along the random
 directions and drives the momentum step by the averaged surrogate. -/
