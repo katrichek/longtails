@@ -45,7 +45,7 @@ abbrev spec : Setup where
   Output p := p.E
   publicInput p := p
   valid q := 0 < q.d ∧ 0 < q.L ∧ 0 ≤ q.R ∧ 0 ≤ q.σ ∧ 0 ≤ q.G ∧ 0 < q.μ ∧ 0 < q.ε ∧ 0 < q.h ∧
-    q.L * q.h ^ 2 * (q.d : ℝ) ≤ q.ε
+    q.L * q.h ^ 2 * (q.d : ℝ) ≤ q.ε ∧ 2 * q.G ^ 2 * q.h ^ 2 ≤ q.σ ^ 2 * (q.d : ℝ)
   admissible q f O :=
     LongTails.Setups.ZerothOrderPolyakConvex.baseShape (base q) f O ∧
       (∃ xstar, IsMinOn f univ xstar ∧ ‖q.x0 - xstar‖ ≤ q.R ∧
