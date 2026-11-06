@@ -68,4 +68,14 @@ abbrev spec : Setup where
         Integrable (fun ω => f (output ω) - f xstar) (P : Measure _) ∧
         (∫ ω, f (output ω) - f xstar ∂(P : Measure _)) ≤ q.ε
 
+
+/-- Value conversion: a point that is good for the smoothed objective is good for the original one. -/
+lemma smoothed_value_bound {q : Params} {f fh : q.E → ℝ} {xstar xh : q.E} {B : ℝ}
+    (_hmin : IsMinOn f Set.univ xstar) (hminh : IsMinOn fh Set.univ xh)
+    (hup : ∀ x, fh x - f x ≤ B) (hdown : ∀ x, f x - fh x ≤ B) (y : q.E) :
+    f y - f xstar ≤ (fh y - fh xh) + 2 * B := by
+  have hy : f y ≤ fh y + B := by linarith [hdown y]
+  have hxh : fh xh ≤ fh xstar := hminh (Set.mem_univ xstar)
+  have hs : fh xstar ≤ f xstar + B := by linarith [hup xstar]
+  linarith
 end LongTails.Setups.ZerothOrderSmoothingStronglyConvex
