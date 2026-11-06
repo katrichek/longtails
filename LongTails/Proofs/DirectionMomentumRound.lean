@@ -177,6 +177,33 @@ lemma hsumv {d m : ℕ} (hm : 0 < m) (v : Point d) :
     field_simp
   rw [h1, h2, h3, h4, one_smul]
 
+/-- The round surrogate is integrable under the product law of its probes. -/
+lemma roundOf_integrable {d m : ℕ} {W : Measure (Point d × Ω)} [IsProbabilityMeasure W]
+    {g : Point d → Ω → ℝ} {fh : Point d → ℝ} {h : ℝ}
+    (hint : ∀ x s, Integrable (fun u : Point d × Ω => slotVal h g x s u - halfGrad fh x s) W)
+    (x : Point d) :
+    Integrable (fun a : secantSpace 1 m → Point d × Ω => roundOf h g x m a) (slotLaw 1 m W) := by
+  classical
+  have hsi (t : secantSpace 1 m) : Integrable (fun u : Point d × Ω =>
+      (if t.2.2 then (1 : ℝ) else -1) • slotVal h g x t.2.2 u) W :=
+    integrable_smul_pt (c := (if t.2.2 then (1 : ℝ) else -1)) (slotVal_integrable hint x t.2.2)
+  have hu (t : secantSpace 1 m) : Integrable (fun a : secantSpace 1 m → Point d × Ω =>
+      (if t.2.2 then (1 : ℝ) else -1) • slotVal h g x t.2.2 (a t)) (slotLaw 1 m W) := by
+    have h1 : (fun a : secantSpace 1 m → Point d × Ω =>
+          (if t.2.2 then (1 : ℝ) else -1) • slotVal h g x t.2.2 (a t))
+        = (fun u : Point d × Ω =>
+          (if t.2.2 then (1 : ℝ) else -1) • slotVal h g x t.2.2 u) ∘
+          (fun a : secantSpace 1 m → Point d × Ω => a t) := rfl
+    rw [h1]
+    exact (preserving_slotEval W t).integrable_comp_of_integrable (ε := Point d) (hsi t)
+  have hsum : Integrable (fun a : secantSpace 1 m → Point d × Ω =>
+      ∑ t : secantSpace 1 m, (if t.2.2 then (1 : ℝ) else -1) • slotVal h g x t.2.2 (a t))
+      (slotLaw 1 m W) := integrable_finsetSum Finset.univ fun t _ => hu t
+  show Integrable (fun a : secantSpace 1 m → Point d × Ω =>
+      (1 / (m : ℝ)) • ∑ t : secantSpace 1 m,
+        (if t.2.2 then (1 : ℝ) else -1) • slotVal h g x t.2.2 (a t)) (slotLaw 1 m W)
+  exact integrable_smul_pt (c := (1 / (m : ℝ))) hsum
+
 /-- The mean of one direction-sampled round is the smoothed gradient. -/
 lemma roundOf_mean {d m : ℕ} {W : Measure (Point d × Ω)} [IsProbabilityMeasure W]
     {g : Point d → Ω → ℝ} {fh : Point d → ℝ} {h : ℝ}

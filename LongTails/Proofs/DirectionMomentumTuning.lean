@@ -1,6 +1,5 @@
 import LongTails.Proofs.AcceleratedSecantTuning
 import LongTails.Proofs.CenteredMomentumTuning
-import LongTails.Proofs.DirectionMomentumStep
 
 set_option maxHeartbeats 2000000
 
@@ -9,24 +8,19 @@ namespace OracleTemplate.SecantPolyak.DirectionSampled
 open OracleTemplate SecantPolyak.Accelerated SecantPolyak.Centered Scheduled
 open scoped BigOperators
 
-/-- Second-moment scale of one unit of the direction-sampled surrogate at bandwidth
-`h ^ 2 = eps / (L * d)`, using `2 * G ^ 2 * h ^ 2 <= sigma ^ 2 * d`. -/
-noncomputable def var (d : ℕ) (L σ ε : ℝ) : ℝ := σ ^ 2 * L * (d : ℝ) ^ 2 / (2 * ε)
-
-/-- Graded batch widths of the direction-sampled schedule. -/
-noncomputable def batchD (d : ℕ) (L μ σ ε : ℝ) (K n : ℕ) : ℕ :=
-  Scheduled.graded (1 + 8 * cv L μ * var d L σ ε / (ε * th L μ)) (tauA L μ) K n
+/-- Graded batch widths of the direction-sampled schedule at second-moment level `V`. -/
+noncomputable def dirBatch (L μ V ε : ℝ) (K n : ℕ) : ℕ :=
+  Scheduled.graded (1 + 8 * cv L μ * V / (ε * th L μ)) (tauA L μ) K n
 
 /-- The graded batches make the accumulated second-moment error fit into `ε / 2`, while the
 momentum rounds contract the initial potential below `ε / 2`. -/
-lemma dir_tuning (d : ℕ) (hd : 0 < d) (L μ σ R ε : ℝ)
-    (hL : 0 < L) (hμ : 0 < μ) (_hσ : 0 ≤ σ) (_hR : 0 ≤ R) (hε : 0 < ε) :
+lemma dir_tuning (L μ V R ε : ℝ)
+    (hL : 0 < L) (hμ : 0 < μ) (hV : 0 ≤ V) (_hR : 0 ≤ R) (hε : 0 < ε) :
     rhoA L μ ^ iters L μ R ε * (L / 2 * R ^ 2 + μ / 4 * R ^ 2)
         + ∑ k ∈ Finset.range (iters L μ R ε), rhoA L μ ^ (iters L μ R ε - 1 - k)
-            * (cv L μ * (var d L σ ε / (batchD d L μ σ ε (iters L μ R ε) k))) ≤ ε := by
+            * (cv L μ * (V / (dirBatch L μ V ε (iters L μ R ε) k))) ≤ ε := by
   classical
   have hth0 : 0 < th L μ := th_pos L μ hL hμ
-  have hd0 : (0 : ℝ) < d := by exact_mod_cast hd
   have hh0 : 0 < th L μ / 2 := by linarith
   set A : ℝ := L / 2 * R ^ 2 + μ / 4 * R ^ 2 with hAdef
   set ρ : ℝ := rhoA L μ with hρdef
@@ -63,32 +57,27 @@ lemma dir_tuning (d : ℕ) (hd : 0 < d) (L μ σ R ε : ℝ)
       nlinarith [sq_nonneg ε]
     linarith
   have hcv0 : 0 ≤ cv L μ := cv_nonneg L μ hL hμ
-  have hvar0 : 0 ≤ var d L σ ε := by
-    show 0 ≤ σ ^ 2 * L * (d : ℝ) ^ 2 / (2 * ε)
-    positivity
-  have hX0 : 0 ≤ cv L μ * var d L σ ε := mul_nonneg hcv0 hvar0
-  have hN0 : 0 < 1 + 8 * cv L μ * var d L σ ε / (ε * th L μ) := by positivity
+  have hX0 : 0 ≤ cv L μ * V := mul_nonneg hcv0 hV
+  have hN0 : 0 < 1 + 8 * cv L μ * V / (ε * th L μ) := by positivity
   have hnoise : ∑ k ∈ Finset.range K,
-      ρ ^ (K - 1 - k) * (cv L μ * (var d L σ ε / (batchD d L μ σ ε K k))) ≤ ε / 2 := by
+      ρ ^ (K - 1 - k) * (cv L μ * (V / (dirBatch L μ V ε K k))) ≤ ε / 2 := by
     have hshape : ∑ k ∈ Finset.range K,
-        ρ ^ (K - 1 - k) * (cv L μ * (var d L σ ε / (batchD d L μ σ ε K k)))
-        = ∑ k ∈ Finset.range K,
-          ρ ^ (K - 1 - k) * ((cv L μ * var d L σ ε) / (batchD d L μ σ ε K k)) := by
+        ρ ^ (K - 1 - k) * (cv L μ * (V / (dirBatch L μ V ε K k)))
+        = ∑ k ∈ Finset.range K, ρ ^ (K - 1 - k) * ((cv L μ * V) / (dirBatch L μ V ε K k)) := by
       refine Finset.sum_congr rfl (fun k _ => ?_)
       rw [mul_div_assoc]
     rw [hshape]
     have h3 := graded_noise_sum (ρ := ρ) (τ := tauA L μ) hρ0 (rhoA_lt_tauA L μ hL hμ)
       (tauA_pos L μ hL hμ) (tauA_le_one L μ hL hμ)
-      (1 + 8 * cv L μ * var d L σ ε / (ε * th L μ)) (cv L μ * var d L σ ε) hN0 hX0 K
+      (1 + 8 * cv L μ * V / (ε * th L μ)) (cv L μ * V) hN0 hX0 K
     have h4 : 1 / (1 - ρ / tauA L μ) ≤ 4 / th L μ := ratio_inv_le L μ hL hμ
-    have hzle : (8 * cv L μ * var d L σ ε / (ε * th L μ))
-        / (1 + 8 * cv L μ * var d L σ ε / (ε * th L μ)) ≤ 1 :=
+    have hzle : (8 * cv L μ * V / (ε * th L μ))
+        / (1 + 8 * cv L μ * V / (ε * th L μ)) ≤ 1 :=
       (div_le_one hN0).mpr (by linarith)
-    have h5 : cv L μ * var d L σ ε / (1 + 8 * cv L μ * var d L σ ε / (ε * th L μ))
-        ≤ ε * th L μ / 8 := by
-      calc cv L μ * var d L σ ε / (1 + 8 * cv L μ * var d L σ ε / (ε * th L μ))
-          = (ε * th L μ / 8) * ((8 * cv L μ * var d L σ ε / (ε * th L μ))
-              / (1 + 8 * cv L μ * var d L σ ε / (ε * th L μ))) := by
+    have h5 : cv L μ * V / (1 + 8 * cv L μ * V / (ε * th L μ)) ≤ ε * th L μ / 8 := by
+      calc cv L μ * V / (1 + 8 * cv L μ * V / (ε * th L μ))
+          = (ε * th L μ / 8) * ((8 * cv L μ * V / (ε * th L μ))
+              / (1 + 8 * cv L μ * V / (ε * th L μ))) := by
             field_simp
         _ ≤ (ε * th L μ / 8) * 1 := mul_le_mul_of_nonneg_left hzle (by positivity)
         _ = ε * th L μ / 8 := by ring
@@ -97,8 +86,7 @@ lemma dir_tuning (d : ℕ) (hd : 0 < d) (L μ σ R ε : ℝ)
       have hτ := tauA_pos L μ hL hμ
       rw [sub_pos, div_lt_one hτ]
       simpa [hρdef] using hlt
-    have h6 : (cv L μ * var d L σ ε) / (1 + 8 * cv L μ * var d L σ ε / (ε * th L μ))
-        * (1 / (1 - ρ / tauA L μ)) ≤ ε / 2 := by
+    have h6 : (cv L μ * V) / (1 + 8 * cv L μ * V / (ε * th L μ)) * (1 / (1 - ρ / tauA L μ)) ≤ ε / 2 := by
       have h7 := mul_le_mul h5 h4 (div_nonneg zero_le_one (le_of_lt hden1))
         (by positivity : (0 : ℝ) ≤ ε * th L μ / 8)
       have h8 : (ε * th L μ / 8) * (4 / th L μ) = ε / 2 := by
@@ -107,7 +95,7 @@ lemma dir_tuning (d : ℕ) (hd : 0 < d) (L μ σ R ε : ℝ)
       linarith [h7, h8]
     exact le_trans h3 h6
   have hgoal : ρ ^ K * A + ∑ k ∈ Finset.range K,
-      ρ ^ (K - 1 - k) * (cv L μ * (var d L σ ε / (batchD d L μ σ ε K k))) ≤ ε := by
+      ρ ^ (K - 1 - k) * (cv L μ * (V / (dirBatch L μ V ε K k))) ≤ ε := by
     linarith
   exact hgoal
 
