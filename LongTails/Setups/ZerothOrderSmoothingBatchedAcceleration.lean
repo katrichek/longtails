@@ -7,21 +7,24 @@ namespace LongTails.Setups.ZerothOrderSmoothingBatchedAcceleration
 open OracleTemplate
 open LongTails.Setups.ZerothOrderSmoothAndConvex (Point)
 
-/-- Momentum weight of the weighted anchored pair scheme with damped step `1 / L`: the largest
-contraction the damped step admits once the probe deviation is absorbed by mirrored batching. -/
+/-- Momentum weight of the weighted anchored pair scheme with damped step `1 / L` and anchor weight
+`μ / 4`: the contraction `√(μ / (2 L))` is the largest one the damped step admits, and its reciprocal
+`√(2 L / μ)` is the per-round logarithmic cost. -/
 noncomputable def mmt : LongTails.Setups.ZerothOrderSmoothingStrongGrowth.Params → ℝ :=
-  fun q => Real.sqrt (2 * q.μ / (3 * q.L))
+  fun q => Real.sqrt (q.μ / (2 * q.L))
 
-/-- Anchor weight of the scheme: one third of the strong convexity modulus, so the anchor moves by
-`3 * θ / (2 * μ)` times the round surrogate instead of the `2 * θ / μ` of the unweighted pair. -/
+/-- Anchor weight of the scheme: one quarter of the strong convexity modulus, so the anchor moves by
+`(θ / (2 · μ / 4)) = 2 * θ / μ` times the round surrogate, the accelerated anchor step, while the
+potential carries the weight `μ / 4`. -/
 noncomputable def anch : LongTails.Setups.ZerothOrderSmoothingStrongGrowth.Params → ℝ :=
-  fun q => q.μ / 3
+  fun q => q.μ / 4
 
 /-- Batch width forced by the noise absorption cap: `m` mirrored pairs per round give a surrogate
 whose mean-square deviation is `2 * ρ² / m` times the smoothed gap at the probed point, and the
-weighted anchored potential absorbs it exactly when `6 * ρ² ≤ m * μ * θ`. -/
+weighted anchored potential absorbs it exactly when `4 * ρ² ≤ m * μ * θ`. One pair therefore
+suffices throughout the interpolation regime `ρ² ≤ μ * θ / 4`. -/
 noncomputable def width : LongTails.Setups.ZerothOrderSmoothingStrongGrowth.Params → ℕ :=
-  fun q => max 1 ⌈6 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊
+  fun q => max 1 ⌈4 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊
 
 /-- The derived batch width is positive, so every round asks at least one mirrored pair. -/
 lemma width_pos (q : LongTails.Setups.ZerothOrderSmoothingStrongGrowth.Params) : 0 < width q :=

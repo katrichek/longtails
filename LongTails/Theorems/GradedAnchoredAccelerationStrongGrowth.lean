@@ -38,7 +38,7 @@ noncomputable def rate (q : Par) : ℝ := mmt q
 noncomputable def widthOf (q : Par) : ℕ := width q
 
 /-- Initial weighted potential bound forced by `‖x0 − xh‖ ≤ R` and `μ ≤ L`. -/
-noncomputable def gap0 (q : Par) : ℝ := 5 * q.L * q.R ^ 2 / 6
+noncomputable def gap0 (q : Par) : ℝ := 3 * q.L * q.R ^ 2 / 4
 
 /-- Rounds of weighted anchored pair acceleration: logarithmic in `1 / ε`. -/
 noncomputable def iters (q : Par) : ℕ :=
@@ -49,8 +49,8 @@ noncomputable def budget :
     (let S := LongTails.Setups.ZerothOrderSmoothingBatchedAcceleration.spec;
       S.Params → Fin S.numOracles → ℕ) :=
   fun q _ =>
-    2 * max 1 ⌈6 * q.ρ ^ 2 / (q.μ * Real.sqrt (2 * q.μ / (3 * q.L)))⌉₊ *
-      ⌈Real.sqrt (3 * q.L / (2 * q.μ)) * Real.log (1 + 5 * q.L * q.R ^ 2 / (3 * q.ε))⌉₊
+    2 * max 1 ⌈4 * q.ρ ^ 2 / (q.μ * Real.sqrt (q.μ / (2 * q.L)))⌉₊ *
+      ⌈Real.sqrt (2 * q.L / q.μ) * Real.log (1 + 3 * q.L * q.R ^ 2 / (2 * q.ε))⌉₊
 
 /-- Weighted anchored pair acceleration with mirrored batching reaches expected accuracy `ε` with
 `2 * m * ⌈√(3 L / (2 μ)) · log (1 + 5 L R² / (3 ε))⌉` zeroth-order probes and no interpolation cap. -/
@@ -70,32 +70,29 @@ theorem result :
   have hε2 : 0 < q.ε / 2 := by linarith
   have hm : 0 < width q := width_pos q
   have hβ : 0 < anch q := by
-    show 0 < q.μ / 3
+    show 0 < q.μ / 4
     positivity
   have hβh : anch q ≤ q.μ / 2 := by
-    show q.μ / 3 ≤ q.μ / 2
+    show q.μ / 4 ≤ q.μ / 2
     linarith
-  have hθ : mmt q = Real.sqrt (2 * q.μ / (3 * q.L)) := rfl
+  have hθ : mmt q = Real.sqrt (q.μ / (2 * q.L)) := rfl
   have hθ0 : 0 < mmt q := by
-    show 0 < Real.sqrt (2 * q.μ / (3 * q.L))
+    show 0 < Real.sqrt (q.μ / (2 * q.L))
     refine Real.sqrt_pos.mpr (div_pos (by positivity) (by positivity))
   have hθ1 : mmt q ≤ 1 := by
-    have h1 : 2 * q.μ / (3 * q.L) ≤ 1 := by
+    have h1 : q.μ / (2 * q.L) ≤ 1 := by
       refine (div_le_one (by positivity)).mpr ?_
-      have h2 : (2 : ℝ) * q.μ ≤ 2 * q.L := mul_le_mul_of_nonneg_left hμL (by norm_num)
-      have h3 : (2 : ℝ) * q.L ≤ 3 * q.L := by nlinarith
-      linarith
+      nlinarith
     exact Real.sqrt_le_one.mpr h1
-  have hθsq : mmt q ^ 2 = 2 * q.μ / (3 * q.L) := by
-    show Real.sqrt (2 * q.μ / (3 * q.L)) ^ 2 = _
+  have hθsq : mmt q ^ 2 = q.μ / (2 * q.L) := by
+    show Real.sqrt (q.μ / (2 * q.L)) ^ 2 = _
     rw [Real.sq_sqrt (by positivity)]
   have hstep : q.L * (1 / q.L) ^ 2 / 2 = 1 / (2 * q.L) := by
     field_simp [hL.ne']
   have hdev : mmt q ^ 2 / (4 * anch q) = 1 / (2 * q.L) := by
     rw [hθsq]
-    show (2 * q.μ / (3 * q.L)) / (4 * (q.μ / 3)) = 1 / (2 * q.L)
+    show (q.μ / (2 * q.L)) / (4 * (q.μ / 4)) = 1 / (2 * q.L)
     field_simp
-    ring
   have hcap1 : mmt q ^ 2 / (4 * anch q) ≤ 1 / q.L - q.L * (1 / q.L) ^ 2 / 2 := by
     have h1 : 1 / q.L - q.L * (1 / q.L) ^ 2 / 2 = 1 / (2 * q.L) := by
       rw [hstep]
@@ -104,30 +101,30 @@ theorem result :
   have hcapcv : q.L * (1 / q.L) ^ 2 / 2 + mmt q ^ 2 / (4 * anch q) = 1 / q.L := by
     rw [hstep, hdev]
     ring
-  have hw : (width q : ℝ) ≥ 6 * q.ρ ^ 2 / (q.μ * mmt q) := by
-    have h2 : (6 * q.ρ ^ 2 / (q.μ * mmt q) : ℝ) ≤ (⌈6 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊ : ℝ) :=
+  have hw : (width q : ℝ) ≥ 4 * q.ρ ^ 2 / (q.μ * mmt q) := by
+    have h2 : (4 * q.ρ ^ 2 / (q.μ * mmt q) : ℝ) ≤ (⌈4 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊ : ℝ) :=
       Nat.le_ceil _
-    have h3 : (⌈6 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊ : ℝ) ≤ (width q : ℝ) :=
-      mod_cast Nat.le_max_right 1 ⌈6 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊
+    have h3 : (⌈4 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊ : ℝ) ≤ (width q : ℝ) :=
+      mod_cast Nat.le_max_right 1 ⌈4 * q.ρ ^ 2 / (q.μ * mmt q)⌉₊
     linarith
-  have hmge : (2 : ℝ) * q.ρ ^ 2 / (width q : ℝ) ≤ q.μ * mmt q / 3 := by
+  have hmge : (2 : ℝ) * q.ρ ^ 2 / (width q : ℝ) ≤ q.μ * mmt q / 2 := by
     refine (div_le_iff₀ (by positivity)).mpr ?_
     have hq : q.μ * mmt q ≠ 0 := by
-      show q.μ * Real.sqrt (2 * q.μ / (3 * q.L)) ≠ 0
+      show q.μ * Real.sqrt (q.μ / (2 * q.L)) ≠ 0
       positivity
-    have h2 : (6 * q.ρ ^ 2 / (q.μ * mmt q)) * (q.μ * mmt q / 3) = 2 * q.ρ ^ 2 := by
+    have h2 : (4 * q.ρ ^ 2 / (q.μ * mmt q)) * (q.μ * mmt q / 2) = 2 * q.ρ ^ 2 := by
       field_simp [hq, hrho.ne']
       ring
-    have h3 : (6 * q.ρ ^ 2 / (q.μ * mmt q)) * (q.μ * mmt q / 3) ≤
-        (width q : ℝ) * (q.μ * mmt q / 3) :=
+    have h3 : (4 * q.ρ ^ 2 / (q.μ * mmt q)) * (q.μ * mmt q / 2) ≤
+        (width q : ℝ) * (q.μ * mmt q / 2) :=
       mul_le_mul_of_nonneg_right hw (by positivity)
     linarith
   have hcap3 :
       (q.L * (1 / q.L) ^ 2 / 2 + mmt q ^ 2 / (4 * anch q)) * (2 * q.ρ ^ 2 / (width q : ℝ))
         ≤ mmt q * (q.μ / 2 - anch q) * (2 / q.L) := by
     rw [hcapcv]
-    have h1 : mmt q * (q.μ / 2 - anch q) * (2 / q.L) = (q.μ * mmt q / 3) / q.L := by
-      show mmt q * (q.μ / 2 - q.μ / 3) * (2 / q.L) = _
+    have h1 : mmt q * (q.μ / 2 - anch q) * (2 / q.L) = (q.μ * mmt q / 2) / q.L := by
+      show mmt q * (q.μ / 2 - q.μ / 4) * (2 / q.L) = _
       ring
     have h2 : (1 / q.L) * (2 * q.ρ ^ 2 / (width q : ℝ)) = (2 * q.ρ ^ 2 / (width q : ℝ)) / q.L := by
       ring
@@ -135,20 +132,20 @@ theorem result :
     refine (div_le_div_iff₀ (by positivity) (by positivity)).mpr ?_
     nlinarith
   set K : ℕ :=
-    ⌈Real.sqrt (3 * q.L / (2 * q.μ)) * Real.log (1 + 5 * q.L * q.R ^ 2 / (3 * q.ε))⌉₊
-  have hinv : Real.sqrt (3 * q.L / (2 * q.μ)) = 1 / mmt q := by
-    have h2 : 3 * q.L / (2 * q.μ) = (2 * q.μ / (3 * q.L))⁻¹ := by field_simp
+    ⌈Real.sqrt (2 * q.L / q.μ) * Real.log (1 + 3 * q.L * q.R ^ 2 / (2 * q.ε))⌉₊
+  have hinv : Real.sqrt (2 * q.L / q.μ) = 1 / mmt q := by
+    have h2 : 2 * q.L / q.μ = (q.μ / (2 * q.L))⁻¹ := by field_simp
     rw [h2, Real.sqrt_inv]
-    show (Real.sqrt (2 * q.μ / (3 * q.L)))⁻¹ = 1 / Real.sqrt (2 * q.μ / (3 * q.L))
+    show (Real.sqrt (q.μ / (2 * q.L)))⁻¹ = 1 / Real.sqrt (q.μ / (2 * q.L))
     exact (one_mul _).symm
-  have hgapid : gap0 q / (q.ε / 2) = 5 * q.L * q.R ^ 2 / (3 * q.ε) := by
-    show (5 * q.L * q.R ^ 2 / 6) / (q.ε / 2) = _
+  have hgapid : gap0 q / (q.ε / 2) = 3 * q.L * q.R ^ 2 / (2 * q.ε) := by
+    show (3 * q.L * q.R ^ 2 / 4) / (q.ε / 2) = _
     field_simp
     ring
   have hKb : ⌈(1 / mmt q) * Real.log (1 + gap0 q / (q.ε / 2))⌉₊ ≤ K := by
-    rw [hgapid, show (1 / mmt q) = Real.sqrt (3 * q.L / (2 * q.μ)) from hinv.symm]
+    rw [hgapid, show (1 / mmt q) = Real.sqrt (2 * q.L / q.μ) from hinv.symm]
   have hgap0 : 0 ≤ gap0 q := by
-    show 0 ≤ 5 * q.L * q.R ^ 2 / 6
+    show 0 ≤ 3 * q.L * q.R ^ 2 / 4
     refine div_nonneg ?_ (by norm_num)
     refine mul_nonneg (mul_nonneg (by norm_num) (le_of_lt hL)) (sq_nonneg _)
   have hgeo : (1 - mmt q) ^ K * gap0 q ≤ q.ε / 2 := by
@@ -180,19 +177,19 @@ theorem result :
   have hinit : waPotential fh (anch q) xh (q.x0, q.x0) ≤ gap0 q := by
     have h1 : ‖q.x0 - xh‖ ^ 2 ≤ q.R ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hR_xh 2
     have h2 : waPotential fh (anch q) xh (q.x0, q.x0)
-        = fh q.x0 - fh xh + (q.μ / 3) * ‖q.x0 - xh‖ ^ 2 := rfl
+        = fh q.x0 - fh xh + (q.μ / 4) * ‖q.x0 - xh‖ ^ 2 := rfl
     rw [h2]
-    have h3a : (q.μ / 3) * ‖q.x0 - xh‖ ^ 2 ≤ (q.μ / 3) * q.R ^ 2 :=
+    have h3a : (q.μ / 4) * ‖q.x0 - xh‖ ^ 2 ≤ (q.μ / 4) * q.R ^ 2 :=
       mul_le_mul_of_nonneg_left h1 (by positivity)
-    have h3b : (q.μ / 3) * q.R ^ 2 ≤ (q.L / 3) * q.R ^ 2 :=
+    have h3b : (q.μ / 4) * q.R ^ 2 ≤ (q.L / 4) * q.R ^ 2 :=
       mul_le_mul_of_nonneg_right (by linarith [hμL]) (sq_nonneg _)
-    have h3 : (q.μ / 3) * ‖q.x0 - xh‖ ^ 2 ≤ (q.L / 3) * q.R ^ 2 := h3a.trans h3b
+    have h3 : (q.μ / 4) * ‖q.x0 - xh‖ ^ 2 ≤ (q.L / 4) * q.R ^ 2 := h3a.trans h3b
     have h4 : fh q.x0 - fh xh ≤ q.L / 2 * q.R ^ 2 := by
       have h5 : q.L * q.R ^ 2 / 2 = q.L / 2 * q.R ^ 2 := by ring
       rw [← h5]
       exact hgapx
-    have h6 : q.L / 2 * q.R ^ 2 + q.L / 3 * q.R ^ 2 = gap0 q := by
-      show q.L / 2 * q.R ^ 2 + q.L / 3 * q.R ^ 2 = 5 * q.L * q.R ^ 2 / 6
+    have h6 : q.L / 2 * q.R ^ 2 + q.L / 4 * q.R ^ 2 = gap0 q := by
+      show q.L / 2 * q.R ^ 2 + q.L / 4 * q.R ^ 2 = 3 * q.L * q.R ^ 2 / 4
       ring
     linarith
   obtain ⟨hInt, hbnd⟩ := ag_exec_accuracy (d := q.d) (m := width q) hm (g := g) (fh := fh)
