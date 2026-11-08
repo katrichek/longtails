@@ -56,6 +56,31 @@ noncomputable def budget :
       S.Params → Fin S.numOracles → ℕ) :=
   fun q _ => 2 * rounds q
 
+/-- The proved budget is `Θ((L + ρ²) R² / ε)` probes: two probes per round and a round count linear
+in `1 / ε`, with no dependence on the dimension except through the bandwidth admissibility. -/
+lemma budget_le (q : Par) (i : Fin 1) (hL : 0 < q.L) (hε : 0 < q.ε) :
+    (budget q i : ℝ) ≤ 2 + 16 * (q.L + q.ρ ^ 2) * q.R ^ 2 / q.ε := by
+  set x : ℝ := 8 * (q.L + q.ρ ^ 2) * q.R ^ 2 / q.ε with hx
+  have hx0 : 0 ≤ x := by
+    rw [hx]
+    positivity
+  have hmax : ((max 1 ⌈x⌉₊ : ℕ) : ℝ) ≤ x + 1 := by
+    have key : max (1 : ℝ) (⌈x⌉₊ : ℝ) ≤ x + 1 :=
+      max_le_iff.mpr ⟨le_add_of_nonneg_left hx0, (Nat.ceil_lt_add_one hx0).le⟩
+    simpa [Nat.cast_max] using key
+  calc (budget q i : ℝ)
+      = 2 * max 1 ⌈x⌉₊ := by
+        simp only [budget, rounds, ← hx]
+        norm_cast
+    _ ≤ 2 * (x + 1) := by
+        refine mul_le_mul_of_nonneg_left ?_ (by norm_num : (0 : ℝ) ≤ 2)
+        show ((max 1 ⌈x⌉₊ : ℕ) : ℝ) ≤ x + 1
+        exact hmax
+    _ = 2 + 16 * (q.L + q.ρ ^ 2) * q.R ^ 2 / q.ε := by
+        rw [hx, mul_add]
+        field_simp
+        ring
+
 /-- Averaged mirrored-pair probe descent reaches expected accuracy `ε` with `2 * rounds q`
 zeroth-order probes. -/
 theorem result :
