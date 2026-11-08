@@ -104,6 +104,17 @@ lemma budget_eq_twoPoint (q : Params) (hd : 0 < q.d) (hL : 0 < q.L) (hσ : 0 ≤
     (hε : 0 < q.ε) : budget q 0 = bA q 0 := by
   rw [budget_eq_min q, min_eq_left (twoPoint_le_onePoint q hd hL hσ hε)]
 
+/-- At every admissible instance of the original multidimensional convex noisy-value Setup the
+portfolio budget equals the accelerated random two-point budget. The envelope therefore certifies
+exactly the shipped order Theta(d sqrt(L R^2 / eps) + L d^2 R^2 sig / eps^2
++ L d^2 R^2 sig^2 / eps^3) and improves neither the accuracy criterion nor the call count there,
+because `bA` is that budget by definition. -/
+lemma budget_eq_twoPoint_of_valid (q : Params)
+    (hq : LongTails.Setups.ZerothOrderSmoothAndConvex.spec.valid q) :
+    budget q 0 = bA q 0 := by
+  obtain ⟨hd, hL, _hR, hσ, hε⟩ := hq
+  exact budget_eq_twoPoint q hd hL hσ hε
+
 /-- FULL convergence theorem for the original noisy zeroth-order Setup. -/
 theorem result :
     OracleTemplate.Convergence LongTails.Setups.ZerothOrderSmoothAndConvex.spec budget :=
