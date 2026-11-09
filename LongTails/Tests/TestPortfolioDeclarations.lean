@@ -3,10 +3,11 @@ import LongTails.Theorems.PortfolioStronglyConvex
 import LongTails.Theorems.PortfolioPolyakConvex
 import LongTails.Theorems.PortfolioLineConvex
 import LongTails.Theorems.PortfolioInterpolatedProbes
+import LongTails.Theorems.PortfolioGrowthConvex
 
 /-!
 Compilation smoke tests. `#check` is NOT a substitute for Comparator;
-run Comparator on the five individual Theorems files separately.
+run Comparator on the individual Theorems files separately.
 -/
 
 #check LongTails.Theorems.PortfolioSmoothConvex.result
@@ -14,6 +15,9 @@ run Comparator on the five individual Theorems files separately.
 #check LongTails.Theorems.PortfolioPolyakConvex.result
 #check LongTails.Theorems.PortfolioLineConvex.result
 #check LongTails.Theorems.PortfolioInterpolatedProbes.result
+#check LongTails.Theorems.PortfolioGrowthConvex.result
+#check LongTails.Theorems.PortfolioGrowthConvex.budget_eq_min
+#check LongTails.Theorems.PortfolioGrowthConvex.budget_le
 
 #check LongTails.Theorems.PortfolioSmoothConvex.budget_eq_min
 #check LongTails.Theorems.PortfolioStronglyConvex.budget_eq_min
