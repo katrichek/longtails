@@ -1,6 +1,7 @@
 import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Convex.Deriv
+import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Tactic
 
 namespace LongTails.Proofs.ZerothOrderBiasBarrier
@@ -476,5 +477,112 @@ the price-weighted variance that drives the budget is the same for every samplin
 lemma coord_price_variance (n : ℕ) (h : ℝ) (hh : 0 < h) :
     2 * (n : ℝ) ^ 2 / (2 * h ^ 2) = (2 * n : ℝ) * ((n : ℝ) / (2 * h ^ 2)) := by
   field_simp [hh.ne']
+
+section SurrogateFloor
+
+open scoped BigOperators RealInnerProductSpace
+
+variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Offset-averaged surrogate of the quadratic `fun x => L / 2 * ‖x‖ ^ 2`: for mean-zero offsets the
+value excess over the quadratic is exactly `L / 2 * Σᵢ wᵢ ‖zᵢ‖²`, independently of the base point.
+The smoothing floor that drives the shipped accelerated two-point budget is therefore attained by
+this instance, not an artefact of the bookkeeping. -/
+lemma surrogate_quadratic_excess (L : ℝ) {w : ι → ℝ} (s : Finset ι)
+    (hs : ∑ i ∈ s, w i = 1) {z : ι → E} (hz : ∑ i ∈ s, w i • z i = 0) (x : E) :
+    (∑ i ∈ s, w i * (L / 2 * ‖x + z i‖ ^ 2)) - L / 2 * ‖x‖ ^ 2
+      = L / 2 * ∑ i ∈ s, w i * ‖z i‖ ^ 2 := by
+  have h1 : (∑ i ∈ s, w i * ⟪x, z i⟫) = 0 := by
+    have h2 : (∑ i ∈ s, ⟪x, w i • z i⟫) = ⟪x, ∑ i ∈ s, w i • z i⟫ :=
+      (inner_sum s (fun i => w i • z i) x).symm
+    rw [hz, inner_zero_right] at h2
+    refine Eq.trans (Finset.sum_congr rfl (fun i _ => ?_)) h2
+    rw [inner_smul_right]
+  have hsum : (∑ i ∈ s, w i * (L / 2 * ‖x‖ ^ 2)) = L / 2 * ‖x‖ ^ 2 := by
+    rw [← Finset.sum_mul, hs, one_mul]
+  calc (∑ i ∈ s, w i * (L / 2 * ‖x + z i‖ ^ 2)) - L / 2 * ‖x‖ ^ 2
+      = (∑ i ∈ s, w i * (L / 2 * ‖x + z i‖ ^ 2)) - ∑ i ∈ s, w i * (L / 2 * ‖x‖ ^ 2) := by
+          rw [hsum]
+    _ = ∑ i ∈ s, (w i * (L / 2 * ‖x + z i‖ ^ 2) - w i * (L / 2 * ‖x‖ ^ 2)) := by
+          rw [Finset.sum_sub_distrib]
+    _ = ∑ i ∈ s, w i * (L / 2 * (‖x + z i‖ ^ 2 - ‖x‖ ^ 2)) := by
+          refine Finset.sum_congr rfl (fun i _ => ?_)
+          ring
+    _ = ∑ i ∈ s, w i * (L / 2 * (2 * ⟪x, z i⟫ + ‖z i‖ ^ 2)) := by
+          refine Finset.sum_congr rfl (fun i _ => ?_)
+          rw [norm_add_sq_real]
+          ring
+    _ = ∑ i ∈ s, (L * (w i * ⟪x, z i⟫) + L / 2 * (w i * ‖z i‖ ^ 2)) := by
+          refine Finset.sum_congr rfl (fun i _ => ?_)
+          ring
+    _ = L * ∑ i ∈ s, w i * ⟪x, z i⟫ + L / 2 * ∑ i ∈ s, w i * ‖z i‖ ^ 2 := by
+          rw [Finset.sum_add_distrib, Finset.mul_sum, Finset.mul_sum]
+    _ = 0 + L / 2 * ∑ i ∈ s, w i * ‖z i‖ ^ 2 := by rw [h1, mul_zero]
+    _ = L / 2 * ∑ i ∈ s, w i * ‖z i‖ ^ 2 := by simp
+
+/-- Offsets of norm `h` realise the floor `L h ^ 2 / 2` exactly, matching the smoothing gap used by
+the shipped accelerated two-point analysis. -/
+lemma surrogate_quadratic_excess_of_norm (L : ℝ) {w : ι → ℝ} (s : Finset ι)
+    (hs : ∑ i ∈ s, w i = 1) {z : ι → E} (hz : ∑ i ∈ s, w i • z i = 0) {h : ℝ}
+    (hn : ∀ i ∈ s, ‖z i‖ = h) (x : E) :
+    (∑ i ∈ s, w i * (L / 2 * ‖x + z i‖ ^ 2)) = L / 2 * ‖x‖ ^ 2 + L / 2 * h ^ 2 := by
+  have hsq : (∑ i ∈ s, w i * ‖z i‖ ^ 2) = h ^ 2 := by
+    rw [Finset.sum_congr rfl (fun i hi => by rw [hn i hi]), ← Finset.sum_mul, hs, one_mul]
+  have h := surrogate_quadratic_excess L s hs hz x
+  rw [hsq] at h
+  linarith
+
+/-- The floor cannot be pushed below the mean square offset: with mean-zero offsets the surrogate
+excess at the minimiser of the quadratic equals `L / 2 * Σᵢ wᵢ ‖zᵢ‖²`, so a floor of `ε / 8` forces
+`Σᵢ wᵢ ‖zᵢ‖² ≤ ε / (4 L)`. -/
+lemma surrogate_floor_le_of_eps {L : ℝ} {w : ι → ℝ} (s : Finset ι) (_hL : 0 < L)
+    (hs : ∑ i ∈ s, w i = 1) {z : ι → E} (hz : ∑ i ∈ s, w i • z i = 0) {ε : ℝ}
+    (_hε : 0 < ε)
+    (hfloor : (∑ i ∈ s, w i * (L / 2 * ‖(0 : E) + z i‖ ^ 2)) - L / 2 * ‖(0 : E)‖ ^ 2 ≤ ε / 8) :
+    L * ∑ i ∈ s, w i * ‖z i‖ ^ 2 ≤ ε / 4 := by
+  have h := surrogate_quadratic_excess L s hs hz (0 : E)
+  rw [h] at hfloor
+  have h2 : L * ∑ i ∈ s, w i * ‖z i‖ ^ 2 = 2 * (L / 2 * ∑ i ∈ s, w i * ‖z i‖ ^ 2) := by ring
+  linarith
+
+/-- Trade certificate for the accelerated two-point budget: any bandwidth `h` that meets the
+surrogate floor constraint `L h ^ 2 / 2 ≤ ε / 8` forces the estimator variance
+`v = 10 d ^ 2 L ^ 2 h ^ 2 + d ^ 2 σ ^ 2 / h ^ 2` to satisfy
+`32 L d ^ 2 σ ^ 2 R ^ 2 / ε ^ 3 ≤ 8 v R ^ 2 / ε ^ 2`, so the iteration count produced by the noise
+constraint is `Ω(ε⁻³)`. -/
+lemma twoPoint_noise_floor {L d σ R ε h : ℝ} (hL : 0 < L) (hd : 0 < d) (hσ : 0 < σ)
+    (hε : 0 < ε) (hh : 0 < h) (hfloor : L * h ^ 2 / 2 ≤ ε / 8) :
+    32 * L * d ^ 2 * σ ^ 2 * R ^ 2 / ε ^ 3
+      ≤ 8 * (10 * d ^ 2 * L ^ 2 * h ^ 2 + d ^ 2 * σ ^ 2 / h ^ 2) * R ^ 2 / ε ^ 2 := by
+  have h2 : L * h ^ 2 ≤ ε / 4 := by linarith
+  have hden : (0 : ℝ) < h ^ 2 := by positivity
+  have hs2 : 0 ≤ d ^ 2 * σ ^ 2 := by positivity
+  have hstep : d ^ 2 * σ ^ 2 / h ^ 2 ≥ 4 * L * d ^ 2 * σ ^ 2 / ε := by
+    field_simp [hden.ne', hε.ne']
+    nlinarith
+  have hR : 0 ≤ R ^ 2 := sq_nonneg R
+  have hpos : 0 ≤ 8 * R ^ 2 / ε ^ 2 := by positivity
+  have hnoise : 0 ≤ 10 * d ^ 2 * L ^ 2 * h ^ 2 := by positivity
+  calc 32 * L * d ^ 2 * σ ^ 2 * R ^ 2 / ε ^ 3
+      = (4 * L * d ^ 2 * σ ^ 2 / ε) * (8 * R ^ 2 / ε ^ 2) := by
+          field_simp [hε.ne', pow_ne_zero 2 hε.ne']
+          ring
+    _ ≤ (d ^ 2 * σ ^ 2 / h ^ 2) * (8 * R ^ 2 / ε ^ 2) := mul_le_mul_of_nonneg_right hstep hpos
+    _ ≤ (10 * d ^ 2 * L ^ 2 * h ^ 2 + d ^ 2 * σ ^ 2 / h ^ 2) * (8 * R ^ 2 / ε ^ 2) :=
+          mul_le_mul_of_nonneg_right (le_add_of_nonneg_left hnoise) hpos
+    _ = 8 * (10 * d ^ 2 * L ^ 2 * h ^ 2 + d ^ 2 * σ ^ 2 / h ^ 2) * R ^ 2 / ε ^ 2 := by
+          field_simp [hε.ne', pow_ne_zero 2 hε.ne']
+
+/-- Combined barrier: for the quadratic instance, a surrogate whose offsets have norm at most `h`
+and whose floor meets `ε / 8` cannot lower the noise-driven part of the budget below
+`Ω(L d² σ² R² ε⁻³)`; the two requirements `L h² / 2 ≤ ε / 8` and the variance amplification point in
+opposite directions. -/
+lemma surrogate_floor_noise_conflict {L d σ R ε h : ℝ} (hL : 0 < L) (hd : 0 < d) (hσ : 0 < σ)
+    (hε : 0 < ε) (hh : 0 < h) (hfloor : L * h ^ 2 / 2 ≤ ε / 8) :
+    (∃ v : ℝ, v = 10 * d ^ 2 * L ^ 2 * h ^ 2 + d ^ 2 * σ ^ 2 / h ^ 2 ∧
+      32 * L * d ^ 2 * σ ^ 2 * R ^ 2 / ε ^ 3 ≤ 8 * v * R ^ 2 / ε ^ 2) :=
+  ⟨_, rfl, twoPoint_noise_floor hL hd hσ hε hh hfloor⟩
+
+end SurrogateFloor
 
 end LongTails.Proofs.ZerothOrderBiasBarrier
