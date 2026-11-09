@@ -5,8 +5,9 @@ set_option maxHeartbeats 2000000
 /-!
 Tuning of the six-point (Richardson) coordinate stencil inside the damped anchored momentum
 schedule. The squared six-point bias is `d * (rho6 * h ^ 6) ^ 2`, so the bandwidth is a twelfth
-root of `epsilon`, the replica count is of order `1 / (h ^ 2 * epsilon)`, and the oracle budget is
-of order `L / mu * log (1 / epsilon) * d ^ (13 / 6) * sigma ^ 2 / epsilon ^ (7 / 6)`. The
+root of `epsilon`, the replica count is of order `d / (h ^ 2 * epsilon)`, and the oracle budget is
+whose dominant small-epsilon term is of order `d * (d / (mu * epsilon)) ^ (7 / 6) * sigma ^ 2 * log (1 / epsilon)`, up to the
+factor `(1 + rho6 ^ 2) ^ (1 / 6)`, as `budget_le` states with exact constants. The
 four-point bandwidth is an eighth root, the central bandwidth a fourth root because the symmetric
 difference has bias `rho * h ^ 2`, and the secant bandwidth only a square root because the
 one-sided difference has bias `L * h / 2`.

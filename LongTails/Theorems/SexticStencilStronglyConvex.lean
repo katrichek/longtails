@@ -15,7 +15,9 @@ per coordinate, the three bands probing bandwidth `h`, `2 h` and `3 h`, so every
 bias is `d * (rho6 * h ^ 6) ^ 2`, the bandwidth is a twelfth root of `epsilon`, and `budget_le`
 exhibits a budget of order
 
-  (L / mu) * log (1 / epsilon) * d ^ (13 / 6) * sigma ^ 2 / epsilon ^ (7 / 6),
+  d * (d / (mu * epsilon)) ^ (7 / 6) * sigma ^ 2 * log (1 / epsilon),
+  up to the factor `(1 + rho6 ^ 2) ^ (1 / 6)`; `budget_le` states the bound with the exact
+  constants, and `bandwidth` and `replicas` give the tuning that attains it.
 
 whereas the four-point stencil of `QuinticStencilStronglyConvex` needs `epsilon ^ (5 / 4)` calls
 under `O (h ^ 4)` bias, the symmetric central stencil of `CubicCentralMomentumStronglyConvex` needs
@@ -164,7 +166,9 @@ stencil points per replica, bounded by
 `6 d (1 + 2 / theta * log (1 + 2 (L/2 + mu/4) R² / eps))
    (2 + 32 (1/(2L) + theta²/mu) d sigma² / (theta eps h²))`
 with `h` the twelfth-root bandwidth of the six-point stencil, hence of order
-`L / mu * log (1 / eps) * d ^ (13 / 6) * sigma² / eps ^ (7 / 6)`. -/
+whose dominant small-epsilon term is
+`d * (d / (mu * eps)) ^ (7 / 6) * sigma² * log (1 / eps)`, up to the factor
+`(1 + rho6²) ^ (1 / 6)`. -/
 lemma budget_le (q : LongTails.Setups.ZerothOrderStronglyConvexSepticBias.Params)
     (i : Fin 1) (hq : LongTails.Setups.ZerothOrderStronglyConvexSepticBias.spec.valid q) :
     (budget q i : ℝ)

@@ -5,8 +5,9 @@ set_option maxHeartbeats 2000000
 /-!
 Tuning of the symmetric central stencil inside the damped anchored momentum schedule. The squared
 symmetric bias is `d * (rho * h ^ 2) ^ 2`, so the bandwidth is a fourth root of `epsilon`, the
-replica count is of order `1 / (h ^ 2 * epsilon)`, and the oracle budget is of order
-`sqrt (L / mu) * log (1 / epsilon) * d * sigma ^ 2 * sqrt (1 + rho ^ 2) / epsilon ^ (3 / 2)`.
+replica count is of order `d / (h ^ 2 * epsilon)`, and the oracle budget is of order
+`d * (d / (mu * epsilon)) ^ (3 / 2) * sigma ^ 2 * sqrt (1 + rho ^ 2) * log (1 / epsilon)`
+up to a universal constant.
 The secant bandwidth `hband` is only a square root because the one-sided difference has bias
 `L * h / 2`, which is why the central stencil lowers the exponent of `epsilon`.
 -/

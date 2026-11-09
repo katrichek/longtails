@@ -7,7 +7,9 @@ Zeroth-order stochastic minimization of a strongly convex objective from noisy v
 symmetric (central) coordinate stencil `f (x + h e i) - f (x - h e i)` inside the damped anchored
 momentum schedule. Under the extra regularity of the calling setup, the squared symmetric bias is
 `d * (rho * h ^ 2) ^ 2`, so the bandwidth is a fourth root of `epsilon` and the oracle budget is of
-order `sqrt (L / mu) * log (1 / epsilon) * d * sigma ^ 2 * sqrt (1 + rho ^ 2) / epsilon ^ (3 / 2)`,
+order
+`d * (d / (mu * epsilon)) ^ (3 / 2) * sigma ^ 2 * sqrt (1 + rho ^ 2) * log (1 / epsilon)`
+up to a universal constant,
 whereas the one-sided secant stencil of `ZerothOrderStronglyConvex` needs bandwidth
 `sqrt epsilon` and therefore `epsilon ^ 2` calls. The exponent `3 / 2` is a consequence of the
 extra `O (h ^ 2)` bias assumption and is not claimed for the plain setup.
