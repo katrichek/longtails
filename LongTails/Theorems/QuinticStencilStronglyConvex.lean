@@ -14,7 +14,7 @@ every round reads `4 * d * n` scalar values. Under the extra four-point regulari
 setup the squared bias is `d * (rho4 * h ^ 4) ^ 2`, the bandwidth is an eighth root of `epsilon`,
 and the oracle budget is of order
 
-  sqrt (L / mu) * log (1 / epsilon) * d ^ (9 / 4) * sigma ^ 2 / epsilon ^ (5 / 4),
+  L / mu * log (1 / epsilon) * d ^ (9 / 4) * sigma ^ 2 / epsilon ^ (5 / 4),
 
 whereas the symmetric central stencil of `CubicCentralMomentumStronglyConvex` needs bandwidth
 `sqrt (sqrt epsilon)` and `epsilon ^ (3 / 2)` calls, and the one-sided secant stencil of
