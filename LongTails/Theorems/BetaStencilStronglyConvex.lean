@@ -29,7 +29,13 @@ lemma `budget_le` exhibits a budget of order
 
 Writing the smoothness order as `beta = 2 * M + 1`, the exponent `(2 * M + 1) / (2 * M)` is exactly
 `beta / (beta - 1)`, the rate of the minimax theory of highly smooth strongly convex zeroth-order
-optimization (`arXiv 2610.00276`), and the ladder above is the sequence `M = 1, 2, 3, 4, 5`.
+optimization (`arXiv 2610.00276`), and the ladder above is the sequence `M = 1, 2, 3, 4, 5`. That
+paper indexes its class by a real order `beta > 2`, so even and non-integer orders exist there. The
+decoder below uses symmetric differences, whose error expansion contains only even powers of `h`,
+so this proof covers the odd integer orders `beta = 2 * M + 1` together with the `beta = 2` case
+`epsilon ^ 2` of `ZerothOrderStronglyConvex`, whose one-sided secant has bias `L * h / 2`. An even
+order `beta = 2 * M` would need a bias of odd order `h ^ (2 * M - 1)`, that is asymmetric one-sided
+bands, and is not claimed here.
 
 The exponent is a consequence of the extra `O (h ^ (2 * M))` bias assumption `centralBetaBias`,
 which does NOT follow from ordinary `L`-smoothness nor from any weaker member of the ladder, and is

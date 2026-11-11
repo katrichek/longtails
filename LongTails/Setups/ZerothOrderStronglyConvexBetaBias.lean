@@ -7,7 +7,7 @@ For `m` bands the probe radii are `h, 2 * h, ..., m * h` and the decoder is the 
 (Richardson) combination of the `m` symmetric differences with weights `betaWeight m j`, the
 Lagrange basis polynomials at `0` for the nodes `1 ^ 2, ..., (m : ℝ) ^ 2`. The extra regularity
 assumed here is that this combination approximates the directional derivative with error
-`rho * h ^ (2 * m)`; a bounded `(4 * m - 1)`-st derivative along every line is sufficient. It does
+`rho * h ^ (2 * m)`; a bounded `(2 * m + 1)`-st derivative along every line is sufficient. It does
 NOT follow from ordinary `L`-smoothness, nor from any weaker member of the ladder. The scalar
 noisy value oracle, the strong convexity and the accuracy criterion are inherited unchanged from
 `LongTails.Setups.ZerothOrderStronglyConvex`.
@@ -18,7 +18,12 @@ The ladder instances already proved in this repository are the cases `m = 1` (ce
 (`DecicStencilStronglyConvex`); the weight checks below identify `betaWeight` with their numeric
 weights, and the general convergence proof `LongTails.Theorems.BetaStencilStronglyConvex` covers
 every `m` at once with budget exponent `(2 * m + 1) / (2 * m)`, which is `beta / (beta - 1)` for
-the smoothness order `beta = 2 * m + 1` of `arXiv 2610 00276`.
+the smoothness order `beta = 2 * m + 1` of `arXiv 2610 00276`. That paper indexes its class by a
+real order `beta > 2`, so even and non-integer orders exist there. Because this decoder is built
+from symmetric differences, whose error expansion contains only even powers of `h`, the ladder
+realizes the odd integer orders `beta = 3, 5, 7, ...`: an even order `beta = 2 * m` would need a
+bias of odd order `h ^ (2 * m - 1)`, hence asymmetric one-sided bands, which this setup does not
+model.
 -/
 namespace LongTails.Setups.ZerothOrderStronglyConvexBetaBias
 
