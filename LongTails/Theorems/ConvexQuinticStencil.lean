@@ -64,6 +64,21 @@ noncomputable abbrev slParams (q : Params) :
       x0 := q.base.x0 }
   rho4 := q.rho4
 
+/-- The ladder's strong-convexity constant at the regularized parameters, i.e.
+`min (lam q) (stiff q)`. -/
+noncomputable abbrev muL (q : Params) : ℝ :=
+  LongTails.Theorems.QuinticStencilStronglyConvex.mu (slParams q).base
+
+/-- The ladder's momentum parameter at the regularized parameters, i.e.
+`th (stiff q) (muL q)`. -/
+noncomputable abbrev momL (q : Params) : ℝ :=
+  LongTails.Theorems.QuinticStencilStronglyConvex.mom (slParams q).base
+
+/-- The ladder's four-point bandwidth at the regularized parameters, i.e.
+`qhband q.base.d (stiff q) (muL q) (inner q) q.rho4`. -/
+noncomputable abbrev bandL (q : Params) : ℝ :=
+  LongTails.Theorems.QuinticStencilStronglyConvex.bandwidth (slParams q)
+
 /-- Oracle budget: the four-point budget of the strongly convex ladder at the regularized
 parameters, radius and accuracy, counting every scalar value read by the momentum rounds. -/
 noncomputable abbrev budget : (let S := spec; S.Params → Fin S.numOracles → ℕ) :=
@@ -195,5 +210,37 @@ theorem result : Convergence LongTails.Setups.ZerothOrderConvexQuinticBias.spec 
   · exact hint
   · refine le_trans hbnd ?_
     linarith [hinnerε]
+
+set_option maxHeartbeats 1000000 in
+/-- Machine-checked scale of the budget: it is the bound of `QuinticStencilStronglyConvex.budget_le`
+at the regularized parameters, that is
+
+`4 d (1 + 2 / momL * log (1 + 2 (stiff / 2 * radius2 + muL / 4 * radius2) / inner))
+   (2 + 32 (1 / (2 stiff) + momL2 / muL) d sigma2 / (momL * inner * bandL2))`,
+
+up to the constant factors written out in the statement. With `lam = ε / (2 R2)` and
+`inner = 3 ε / 4` its small-`ε` order is `d * (d / (lam * inner)) ^ (5 / 4) * sigma2 * log (1 / ε)`,
+i.e. `ε ^ (-5 / 2)` up to the logarithmic factor and `(1 + rho4 ^ 2) ^ (1 / 4)`, against the
+`ε ^ (-3)` of the plain convex uniform-variance model. -/
+lemma budget_le (q : Params) (i : Fin 1) (hq : spec.valid q) :
+    (budget q i : ℝ)
+      ≤ 4 * (q.base.d : ℝ)
+        * (1 + 2 / momL q
+            * Real.log (2 * (stiff q / 2 * radius q ^ 2 + muL q / 4 * radius q ^ 2) / inner q + 1))
+        * (2 + 32 * (1 / (2 * stiff q) + momL q ^ 2 / muL q) * (q.base.d : ℝ) * q.base.σ ^ 2
+            / (momL q * inner q * bandL q ^ 2)) := by
+  obtain ⟨⟨hd, hL, hR0, hσ, hε⟩, hR, hρ4⟩ := hq
+  have hlam : 0 < lam q := by
+    have hR2 : 0 < q.base.R ^ 2 := by positivity
+    simp only [lam]
+    positivity
+  have hstiff : 0 < stiff q := by
+    simp only [stiff]
+    linarith
+  have hinner : 0 < inner q := by
+    simp only [inner]
+    linarith
+  exact LongTails.Theorems.QuinticStencilStronglyConvex.budget_le (slParams q) i
+    ⟨⟨hd, hstiff, Real.sqrt_nonneg _, hσ, hlam, hinner⟩, hρ4⟩
 
 end LongTails.Theorems.ConvexQuinticStencil
