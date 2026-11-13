@@ -331,5 +331,31 @@ lemma execute_shiftAlg' {Q Out : Type*} {Ω : Type} [MeasurableSpace Ω]
       execute (mkOracle P (fun x ω => g x ω + s x)) A (fun _ => K) seed ξ :=
   execute_shiftAlg P g s A K seed ξ
 
+
+omit [CompleteSpace E] [InnerProductSpace ℝ E] [NormedAddCommGroup E] in
+variable [MeasurableSpace E] in
+/-- Transfer of the accuracy statement from the regularized objective `φ` back to the convex
+objective `f`: the cost of undoing the quadratic shift is the constant `c`. -/
+lemma successful_transfer {Ω' : Type} [MeasurableSpace Ω'] (P : ProbabilityMeasure Ω')
+    {f φ : E → ℝ} {outS outR : Ω' → E} {u w : E} {ε c : ℝ}
+    (hout : outS = outR) (hmeas : Measurable outR)
+    (hint : Integrable (fun s => φ (outR s) - φ w) (P : Measure Ω'))
+    (hintle : (∫ s, φ (outR s) - φ w ∂(P : Measure Ω')) ≤ ε - c)
+    (hminf : IsMinOn f Set.univ u) (hfm : Measurable f)
+    (hpt : ∀ z, f z - f u ≤ (φ z - φ w) + c) :
+    Measurable outS ∧ ∃ xstar : E, IsMinOn f Set.univ xstar ∧
+      Integrable (fun s => f (outS s) - f xstar) (P : Measure Ω') ∧
+      (∫ s, f (outS s) - f xstar ∂(P : Measure Ω')) ≤ ε := by
+  have hmeasS : Measurable outS := hout ▸ hmeas
+  have hintS : Integrable (fun s => φ (outS s) - φ w) (P : Measure Ω') := hout ▸ hint
+  have hintleS : (∫ s, φ (outS s) - φ w ∂(P : Measure Ω')) ≤ ε - c := hout ▸ hintle
+  have hintf := integrable_of_shift (φ := φ) (ψ := f) (w := w) (u := u) (c := c) (out := outS)
+    hintS ((hfm.comp hmeasS).sub_const _).aestronglyMeasurable
+    (fun z => sub_nonneg.mpr (hminf (Set.mem_univ z))) hpt
+  have hile := integral_le_of_shift (φ := φ) (ψ := f) (w := w) (u := u) (c := c) (out := outS)
+    hintS hintf hpt
+  exact ⟨hmeasS, u, hminf, hintf, by linarith⟩
+
 end LongTails.Proofs.ConvexRegularizedLift
+
 
