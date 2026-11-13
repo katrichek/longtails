@@ -293,4 +293,32 @@ lemma execute_shiftAlg {Query Output : Type*} {Ω : Type} [MeasurableSpace Ω]
       (response := fun k q => G q.2 (ξ k) + s q.2) h2]
   rfl
 
+
+omit [CompleteSpace E] [InnerProductSpace ℝ E] [NormedAddCommGroup E] in
+/-- Integrability transfers from a `c`-shifted comparison function. -/
+lemma integrable_of_shift {Ω' : Type*} [MeasurableSpace Ω'] {μ : Measure Ω'} [IsFiniteMeasure μ]
+    {ψ φ : E → ℝ}
+    {out : Ω' → E} {w u : E} {c : ℝ} (hint : Integrable (fun s => φ (out s) - φ w) μ)
+    (hmeas : AEStronglyMeasurable (fun s => ψ (out s) - ψ u) μ)
+    (hnonneg : ∀ z, 0 ≤ ψ z - ψ u) (hle : ∀ z, ψ z - ψ u ≤ (φ z - φ w) + c) :
+    Integrable (fun s => ψ (out s) - ψ u) μ :=
+  (hint.add (integrable_const c)).mono_nonneg hmeas
+    (Filter.Eventually.of_forall fun s => hnonneg (out s))
+    (Filter.Eventually.of_forall fun s => hle (out s))
+
+omit [CompleteSpace E] [InnerProductSpace ℝ E] [NormedAddCommGroup E] in
+/-- Integral transfer along a pointwise `c`-shifted comparison. -/
+lemma integral_le_of_shift {Ω' : Type*} [MeasurableSpace Ω'] {μ : Measure Ω'}
+    [IsProbabilityMeasure μ] [IsFiniteMeasure μ] {ψ φ : E → ℝ} {out : Ω' → E} {w u : E} {c : ℝ}
+    (hint : Integrable (fun s => φ (out s) - φ w) μ)
+    (hintψ : Integrable (fun s => ψ (out s) - ψ u) μ)
+    (hle : ∀ z, ψ z - ψ u ≤ (φ z - φ w) + c) :
+    (∫ s, ψ (out s) - ψ u ∂μ) ≤ (∫ s, φ (out s) - φ w ∂μ) + c := by
+  have h1 := integral_mono hintψ (hint.add (integrable_const c))
+    (fun s => hle (out s))
+  simp only [Pi.add_apply] at h1
+  have h2 : (∫ s, (φ (out s) - φ w) + c ∂μ) = (∫ s, φ (out s) - φ w ∂μ) + c := by
+    rw [integral_add hint (integrable_const c), integral_const, probReal_univ, one_smul]
+  linarith [h1, h2]
+
 end LongTails.Proofs.ConvexRegularizedLift
