@@ -321,4 +321,15 @@ lemma integral_le_of_shift {Ω' : Type*} [MeasurableSpace Ω'] {μ : Measure Ω'
     rw [integral_add hint (integrable_const c), integral_const, probReal_univ, one_smul]
   linarith [h1, h2]
 
+
+/-- The shift commutation in the shape of the value oracle of the convex setup. -/
+lemma execute_shiftAlg' {Q Out : Type*} {Ω : Type} [MeasurableSpace Ω]
+    (P : ProbabilityMeasure (ℕ → Ω)) (g : Q → Ω → ℝ) (s : Q → ℝ)
+    (A : Algorithm Q ℝ Out 1) (K : ℕ) (seed : A.Seed) (ξ : ℕ → Ω) :
+    execute { Seed := fun _ => Ω, law := P, answer := fun _ (_, x) ω => g x ω } (shiftAlg A s)
+        (fun _ => K) seed ξ =
+      execute (mkOracle P (fun x ω => g x ω + s x)) A (fun _ => K) seed ξ :=
+  execute_shiftAlg P g s A K seed ξ
+
 end LongTails.Proofs.ConvexRegularizedLift
+
